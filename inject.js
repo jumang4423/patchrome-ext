@@ -35,8 +35,11 @@
           // Always use our speed setting
           if (isFinite(settings.speed) && settings.speed > 0) {
             originalDescriptor.set.call(this, settings.speed);
+            // Apply pitch preservation setting after each playback rate change
+            applyPitchSettings(this);
           } else if (isFinite(value) && value > 0) {
             originalDescriptor.set.call(this, value);
+            applyPitchSettings(this);
           }
         },
         configurable: true
@@ -47,16 +50,24 @@
       // Set playback rate with validation
       element.playbackRate = settings.speed;
       
-      // IMPORTANT: Disable pitch preservation to get pitch shift effect
-      if ('preservesPitch' in element) {
-        element.preservesPitch = false;
-      } else if ('mozPreservesPitch' in element) {
-        element.mozPreservesPitch = false;
-      } else if ('webkitPreservesPitch' in element) {
-        element.webkitPreservesPitch = false;
-      }
+      // Apply pitch settings
+      applyPitchSettings(element);
       
       console.log('Patchrome: Updated element - speed:', settings.speed);
+    }
+  }
+  
+  // Apply pitch preservation settings
+  function applyPitchSettings(element) {
+    // IMPORTANT: Disable pitch preservation to get pitch shift effect
+    if ('preservesPitch' in element) {
+      element.preservesPitch = false;
+    }
+    if ('mozPreservesPitch' in element) {
+      element.mozPreservesPitch = false;
+    }
+    if ('webkitPreservesPitch' in element) {
+      element.webkitPreservesPitch = false;
     }
   }
   
@@ -123,6 +134,43 @@
   
   // Check for media elements periodically
   setInterval(updateAllMedia, checkInterval);
+  
+  // Special handling for SoundCloud which may use Web Audio API
+  // Intercept AudioContext creation to handle pitch changes
+  if (window.location.hostname.includes('soundcloud.com')) {
+    const OriginalAudioContext = window.AudioContext || window.webkitAudioContext;
+    const contexts = new WeakMap();
+    
+    window.AudioContext = window.webkitAudioContext = function(...args) {
+      const ctx = new OriginalAudioContext(...args);
+      
+      const originalCreateMediaElementSource = ctx.createMediaElementSource;
+      ctx.createMediaElementSource = function(mediaElement) {
+        const source = originalCreateMediaElementSource.call(this, mediaElement);
+        
+        // Store the relationship between context and media element
+        contexts.set(mediaElement, ctx);
+        
+        // Ensure pitch settings are applied
+        applyPitchSettings(mediaElement);
+        
+        // Monitor changes
+        const checkPitch = () => {
+          if (mediaElement.playbackRate !== settings.speed) {
+            mediaElement.playbackRate = settings.speed;
+          }
+          applyPitchSettings(mediaElement);
+        };
+        
+        // Check more frequently for SoundCloud
+        setInterval(checkPitch, 50);
+        
+        return source;
+      };
+      
+      return ctx;
+    };
+  }
   
   // Initial check
   setTimeout(updateAllMedia, 100);
