@@ -5,7 +5,7 @@
   console.log('Patchrome: Injected script loaded');
   
   let settings = {
-    enabled: false,
+    enabled: true,
     speed: 1.0
   };
   
@@ -15,6 +15,8 @@
   // Update a single media element
   function updateMediaElement(element) {
     if (!element) return;
+
+    console.log("change pitch excuted: ", element, "speed:", settings.speed);
     
     // Add property descriptor to catch changes
     if (!processedElements.has(element)) {
@@ -30,10 +32,10 @@
           return originalDescriptor.get.call(this);
         },
         set: function(value) {
-          // If we're enabled, ignore external changes and use our speed
-          if (settings.enabled) {
+          // Always use our speed setting
+          if (isFinite(settings.speed) && settings.speed > 0) {
             originalDescriptor.set.call(this, settings.speed);
-          } else {
+          } else if (isFinite(value) && value > 0) {
             originalDescriptor.set.call(this, value);
           }
         },
@@ -41,8 +43,8 @@
       });
     }
     
-    if (settings.enabled) {
-      // Set playback rate
+    if (isFinite(settings.speed) && settings.speed > 0) {
+      // Set playback rate with validation
       element.playbackRate = settings.speed;
       
       // IMPORTANT: Disable pitch preservation to get pitch shift effect
@@ -55,14 +57,6 @@
       }
       
       console.log('Patchrome: Updated element - speed:', settings.speed);
-    } else {
-      // Reset everything
-      element.playbackRate = 1.0;
-      
-      // Re-enable pitch preservation
-      if ('preservesPitch' in element) {
-        element.preservesPitch = true;
-      }
     }
   }
   
@@ -84,7 +78,16 @@
   // Listen for settings from content script
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'PATCHROME_SETTINGS') {
-      settings = event.data.settings;
+      const newSettings = event.data.settings;
+      // Validate speed before applying
+      if (newSettings && typeof newSettings.speed === 'number' && isFinite(newSettings.speed) && newSettings.speed > 0) {
+        settings = newSettings;
+      } else {
+        settings = {
+          enabled: true,
+          speed: 1.0
+        };
+      }
       console.log('Patchrome: Settings received', settings);
       updateAllMedia();
     }
@@ -116,12 +119,7 @@
     subtree: true
   });
   
-  // More frequent checks for dynamic sites like SoundCloud
-  let checkInterval = 500;
-  const isSoundCloud = window.location.hostname.includes('soundcloud.com');
-  if (isSoundCloud) {
-    checkInterval = 100; // More aggressive for SoundCloud
-  }
+  let checkInterval = 100;
   
   // Check for media elements periodically
   setInterval(updateAllMedia, checkInterval);

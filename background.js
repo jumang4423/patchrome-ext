@@ -1,5 +1,5 @@
 let currentSettings = {
-  enabled: false,
+  enabled: true,
   speed: 1.0
 };
 
@@ -23,12 +23,13 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GET_SETTINGS') {
     sendResponse(currentSettings);
-    return false;
+    return true; // Keep the message channel open for async response
   } else if (request.type === 'UPDATE_SETTINGS') {
     currentSettings = request.settings;
     chrome.storage.local.set({ settings: currentSettings });
     broadcastSettings();
-    return false;
+    sendResponse({ success: true });
+    return true; // Keep the message channel open for async response
   }
 });
 

@@ -1,9 +1,8 @@
-const enableToggle = document.getElementById('enableToggle');
 const speedSlider = document.getElementById('speedSlider');
 const speedValue = document.getElementById('speedValue');
 
 let settings = {
-  enabled: false,
+  enabled: true,
   speed: 1.0
 };
 
@@ -23,9 +22,16 @@ window.addEventListener('load', () => {
 });
 
 function updateUI() {
-  enableToggle.checked = settings.enabled;
-  speedSlider.value = settings.speed;
-  speedValue.textContent = settings.speed.toFixed(1) + 'x';
+  // Validate speed before setting
+  if (isFinite(settings.speed) && settings.speed >= 0.5 && settings.speed <= 1.5) {
+    speedSlider.value = settings.speed;
+    speedValue.textContent = settings.speed.toFixed(2) + 'x';
+  } else {
+    // Reset to default if invalid
+    settings.speed = 1.0;
+    speedSlider.value = 1.0;
+    speedValue.textContent = '1.0x';
+  }
 }
 
 function saveSettings() {
@@ -40,13 +46,12 @@ function saveSettings() {
   });
 }
 
-enableToggle.addEventListener('change', (e) => {
-  settings.enabled = e.target.checked;
-  saveSettings();
-});
-
 speedSlider.addEventListener('input', (e) => {
-  settings.speed = parseFloat(e.target.value);
-  speedValue.textContent = settings.speed.toFixed(1) + 'x';
-  saveSettings();
+  const value = parseFloat(e.target.value);
+  // Validate the value to prevent non-finite numbers
+  if (isFinite(value) && value > 0 && value <= 4) {
+    settings.speed = value;
+    speedValue.textContent = settings.speed.toFixed(2) + 'x';
+    saveSettings();
+  }
 });

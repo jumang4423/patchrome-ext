@@ -1,6 +1,6 @@
 // Simple content script that communicates with injected script
 let currentSettings = {
-  enabled: false,
+  enabled: true,
   speed: 1.0
 };
 
@@ -8,10 +8,7 @@ let currentSettings = {
 function injectScript() {
   const script = document.createElement('script');
   script.src = chrome.runtime.getURL('inject.js');
-  script.onload = function() {
-    script.remove();
-  };
-  (document.head || document.documentElement).appendChild(script);
+ (document.head || document.documentElement).appendChild(script);
 }
 
 // Send settings to the page
