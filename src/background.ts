@@ -1,6 +1,13 @@
-let currentSettings = {
+interface Settings {
+  enabled: boolean;
+  speed: number;
+  reverb: number;
+}
+
+let currentSettings: Settings = {
   enabled: true,
-  speed: 1.0
+  speed: 1.0,
+  reverb: 0
 };
 
 chrome.storage.local.get(['settings'], (result) => {
@@ -23,23 +30,25 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GET_SETTINGS') {
     sendResponse(currentSettings);
-    return true; // Keep the message channel open for async response
+    return true;
   } else if (request.type === 'UPDATE_SETTINGS') {
     currentSettings = request.settings;
     chrome.storage.local.set({ settings: currentSettings });
     broadcastSettings();
     sendResponse({ success: true });
-    return true; // Keep the message channel open for async response
+    return true;
   }
 });
 
 function broadcastSettings() {
   chrome.tabs.query({}, (tabs) => {
     tabs.forEach(tab => {
-      chrome.tabs.sendMessage(tab.id, {
-        type: 'SETTINGS_UPDATED',
-        settings: currentSettings
-      }).catch(() => {});
+      if (tab.id) {
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'SETTINGS_UPDATED',
+          settings: currentSettings
+        }).catch(() => {});
+      }
     });
   });
 }
