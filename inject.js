@@ -232,16 +232,22 @@
     const OriginalAudioContext = window.AudioContext || window.webkitAudioContext;
     const contexts = new WeakMap();
     const soundcloudSources = new WeakMap();
-    const processedSources = new WeakSet();
+    const sourceConnections = new WeakMap();
     
     window.AudioContext = window.webkitAudioContext = function(...args) {
       const ctx = new OriginalAudioContext(...args);
       
       const originalCreateMediaElementSource = ctx.createMediaElementSource;
       ctx.createMediaElementSource = function(mediaElement) {
-        // Don't create source if we already have one
+        // Clear any existing source for this media element to handle track changes
         if (soundcloudSources.has(mediaElement)) {
-          return soundcloudSources.get(mediaElement);
+          const oldProxy = soundcloudSources.get(mediaElement);
+          if (oldProxy.disconnect) {
+            oldProxy.disconnect();
+          }
+          soundcloudSources.delete(mediaElement);
+          audioNodes.delete(mediaElement);
+          audioContexts.delete(mediaElement);
         }
         
         const source = originalCreateMediaElementSource.call(this, mediaElement);
@@ -249,11 +255,18 @@
         // Create a proxy source that intercepts connections
         const proxySource = {
           connect: function(destination) {
-            // Only process once
-            if (processedSources.has(source)) {
-              return;
+            // Clean up any existing connection
+            const existingConnection = sourceConnections.get(source);
+            if (existingConnection) {
+              existingConnection.nodes.dryGain.disconnect();
+              existingConnection.nodes.wetGain.disconnect();
+              existingConnection.nodes.convolver.disconnect();
+              existingConnection.nodes.merger.disconnect();
+              source.disconnect();
+              if (existingConnection.interval) {
+                clearInterval(existingConnection.interval);
+              }
             }
-            processedSources.add(source);
             
             // Store the relationship between context and media element
             contexts.set(mediaElement, ctx);
@@ -281,14 +294,16 @@
             // Connect to the destination that SoundCloud intended
             merger.connect(destination);
             
-            // Store nodes
-            audioNodes.set(mediaElement, {
+            const nodes = {
               source,
               dryGain,
               wetGain,
               convolver,
               merger
-            });
+            };
+            
+            // Store nodes
+            audioNodes.set(mediaElement, nodes);
             
             // Apply initial reverb settings
             updateReverbMix(mediaElement);
@@ -306,9 +321,27 @@
             };
             
             // Check more frequently for SoundCloud
-            setInterval(checkPitch, 50);
+            const interval = setInterval(checkPitch, 50);
+            
+            // Store connection info
+            sourceConnections.set(source, {
+              nodes,
+              destination,
+              interval
+            });
           },
           disconnect: function() {
+            const connection = sourceConnections.get(source);
+            if (connection) {
+              connection.nodes.dryGain.disconnect();
+              connection.nodes.wetGain.disconnect();
+              connection.nodes.convolver.disconnect();
+              connection.nodes.merger.disconnect();
+              if (connection.interval) {
+                clearInterval(connection.interval);
+              }
+              sourceConnections.delete(source);
+            }
             source.disconnect();
           },
           // Forward other properties/methods
