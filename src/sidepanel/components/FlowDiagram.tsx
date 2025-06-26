@@ -42,12 +42,15 @@ interface FlowDiagramProps {
 
 const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange, onReverbChange }) => {
   const [nodeIdCounter, setNodeIdCounter] = React.useState(4);
-  const { project, getViewport } = useReactFlow();
+  const { getViewport } = useReactFlow();
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   
   const handleRemoveNode = useCallback((nodeId: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setNodes((nds) => {
+      const filteredNodes = nds.filter((node) => node.id !== nodeId);
+      return filteredNodes;
+    });
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
   }, [setNodes, setEdges]);
 
@@ -60,7 +63,9 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
         speed: speed,
         deletable: false,
         onChange: (key: string, value: number) => {
-          if (key === 'speed') onSpeedChange(value);
+          if (key === 'speed') {
+            onSpeedChange(value);
+          }
         }
       },
       position: { x: 100, y: 150 },
@@ -74,7 +79,9 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
         mix: reverb,
         deletable: true,
         onChange: (key: string, value: number) => {
-          if (key === 'mix') onReverbChange(value);
+          if (key === 'mix') {
+            onReverbChange(value);
+          }
         },
         onRemove: () => handleRemoveNode('2')
       },
@@ -107,7 +114,16 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
         }
         return true;
       });
-      setNodes((nds) => applyNodeChanges(filteredChanges, nds));
+      
+      // Check if any changes are NOT position changes
+      const hasNonPositionChanges = filteredChanges.some(change => 
+        change.type !== 'position'
+      );
+      
+      setNodes((nds) => {
+        const updatedNodes = applyNodeChanges(filteredChanges, nds);
+        return updatedNodes;
+      });
     },
     [setNodes]
   );
@@ -135,21 +151,25 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
           mix: 0,
           deletable: true,
           onChange: (key: string, value: number) => {
-            if (key === 'mix') console.log('New reverb:', value);
+            if (key === 'mix') {
+            }
           },
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 }, // Offset by half the node size
       };
-      setNodes((nds) => [...nds, newNode]);
+      setNodes((nds) => {
+        const updatedNodes = [...nds, newNode];
+        return updatedNodes;
+      });
       setNodeIdCounter((prev) => prev + 1);
     }
   }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode]);
 
   // Update node data when props change
   React.useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => {
+    setNodes((nds) => {
+      const updatedNodes = nds.map((node) => {
         if (node.id === '1') {
           return {
             ...node,
@@ -157,7 +177,9 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
               ...node.data,
               speed: speed,
               onChange: (key: string, value: number) => {
-                if (key === 'speed') onSpeedChange(value);
+                if (key === 'speed') {
+                  onSpeedChange(value);
+                }
               }
             },
           };
@@ -169,15 +191,19 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
               ...node.data,
               mix: reverb,
               onChange: (key: string, value: number) => {
-                if (key === 'mix') onReverbChange(value);
+                if (key === 'mix') {
+                  onReverbChange(value);
+                }
               },
               onRemove: () => handleRemoveNode('2')
             },
           };
         }
         return node;
-      })
-    );
+      });
+      // Don't log here as this runs on every prop change
+      return updatedNodes;
+    });
   }, [speed, reverb, onSpeedChange, onReverbChange, setNodes, handleRemoveNode]);
 
   return (

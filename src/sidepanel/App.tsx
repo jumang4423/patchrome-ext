@@ -22,14 +22,12 @@ const App: React.FC = () => {
         return;
       }
       if (response) {
-        console.log('Loaded settings:', response);
         setSettings(response);
       }
     });
   }, []);
 
   const saveSettings = (newSettings: Settings) => {
-    console.log('Saving settings:', newSettings);
     chrome.runtime.sendMessage({
       type: 'UPDATE_SETTINGS',
       settings: newSettings

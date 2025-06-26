@@ -2,7 +2,6 @@
 (function() {
   'use strict';
   
-  console.log('Patchrome: Injected script loaded');
   
   let settings = {
     enabled: true,
@@ -124,7 +123,6 @@
   function updateMediaElement(element) {
     if (!element) return;
 
-    console.log("change pitch excuted: ", element, "speed:", settings.speed, "reverb:", settings.reverb);
     
     // Setup audio processing if reverb is enabled
     if (settings.reverb > 0 && !audioContexts.has(element)) {
@@ -171,7 +169,6 @@
       // Apply pitch settings
       applyPitchSettings(element);
       
-      console.log('Patchrome: Updated element - speed:', settings.speed, 'reverb:', settings.reverb);
     }
   }
   
@@ -192,14 +189,12 @@
   // Find and update all media elements
   function updateAllMedia() {
     const elements = document.querySelectorAll('audio, video');
-    console.log('Patchrome: Updating', elements.length, 'media elements');
     elements.forEach(updateMediaElement);
   }
   
   // Override play method to catch new elements
   const originalPlay = HTMLMediaElement.prototype.play;
   HTMLMediaElement.prototype.play = function() {
-    console.log('Patchrome: Media element playing');
     updateMediaElement(this);
     return originalPlay.apply(this, arguments);
   };
@@ -218,7 +213,6 @@
         }
         settings.enabled = newSettings.enabled !== false;
       }
-      console.log('Patchrome: Settings received', settings);
       updateAllMedia();
     }
   });
