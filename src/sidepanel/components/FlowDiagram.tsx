@@ -16,16 +16,12 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import ReverbEffectNode from './nodes/ReverbEffectNode';
-import AudioInputNode from './nodes/AudioInputNode';
-import AudioOutputNode from './nodes/AudioOutputNode';
+import UnifiedAudioNode from './nodes/UnifiedAudioNode';
 import MaxStyleEdge from './edges/MaxStyleEdge';
 import AddEffectButton from './AddEffectButton';
 
 const nodeTypes = {
-  audioInput: AudioInputNode,
-  reverbEffect: ReverbEffectNode,
-  audioOutput: AudioOutputNode,
+  unifiedAudio: UnifiedAudioNode,
 };
 
 const edgeTypes = {
@@ -47,32 +43,59 @@ interface FlowDiagramProps {
 const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange, onReverbChange }) => {
   const [nodeIdCounter, setNodeIdCounter] = React.useState(4);
   const { project, getViewport } = useReactFlow();
+  const [nodes, setNodes] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   
+  const handleRemoveNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+  }, [setNodes, setEdges]);
+
   const initialNodes: Node[] = [
     {
       id: '1',
-      type: 'audioInput',
-      data: { speedValue: speed, onSpeedChange: onSpeedChange },
+      type: 'unifiedAudio',
+      data: { 
+        type: 'input' as const,
+        speed: speed,
+        deletable: false,
+        onChange: (key: string, value: number) => {
+          if (key === 'speed') onSpeedChange(value);
+        }
+      },
       position: { x: 100, y: 150 },
       deletable: false,
     },
     {
       id: '2',
-      type: 'reverbEffect',
-      data: { value: reverb, onChange: onReverbChange },
+      type: 'unifiedAudio',
+      data: { 
+        type: 'reverb' as const,
+        mix: reverb,
+        deletable: true,
+        onChange: (key: string, value: number) => {
+          if (key === 'mix') onReverbChange(value);
+        },
+        onRemove: () => handleRemoveNode('2')
+      },
       position: { x: 100, y: 350 },
     },
     {
       id: '3',
-      type: 'audioOutput',
-      data: {},
+      type: 'unifiedAudio',
+      data: {
+        type: 'output' as const,
+        deletable: false,
+      },
       position: { x: 100, y: 550 },
       deletable: false,
     },
   ];
 
-  const [nodes, setNodes] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  // Initialize nodes with effect
+  React.useEffect(() => {
+    setNodes(initialNodes);
+  }, []); // Run only once on mount
 
   // Custom handler to prevent deletion of audio input and output nodes
   const onNodesChange = useCallback(
@@ -103,16 +126,25 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
       
+      const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
-        id: nodeIdCounter.toString(),
-        type: 'reverbEffect',
-        data: { value: 0, onChange: (value: number) => console.log('New reverb:', value) },
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'reverb' as const,
+          mix: 0,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            if (key === 'mix') console.log('New reverb:', value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
         position: { x: centerX - 110, y: centerY - 75 }, // Offset by half the node size
       };
       setNodes((nds) => [...nds, newNode]);
       setNodeIdCounter((prev) => prev + 1);
     }
-  }, [nodeIdCounter, setNodes, getViewport]);
+  }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode]);
 
   // Update node data when props change
   React.useEffect(() => {
@@ -121,19 +153,32 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
         if (node.id === '1') {
           return {
             ...node,
-            data: { speedValue: speed, onSpeedChange: onSpeedChange },
+            data: { 
+              ...node.data,
+              speed: speed,
+              onChange: (key: string, value: number) => {
+                if (key === 'speed') onSpeedChange(value);
+              }
+            },
           };
         }
         if (node.id === '2') {
           return {
             ...node,
-            data: { value: reverb, onChange: onReverbChange },
+            data: { 
+              ...node.data,
+              mix: reverb,
+              onChange: (key: string, value: number) => {
+                if (key === 'mix') onReverbChange(value);
+              },
+              onRemove: () => handleRemoveNode('2')
+            },
           };
         }
         return node;
       })
     );
-  }, [speed, reverb, onSpeedChange, onReverbChange, setNodes]);
+  }, [speed, reverb, onSpeedChange, onReverbChange, setNodes, handleRemoveNode]);
 
   return (
     <div style={{ 

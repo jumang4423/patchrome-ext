@@ -175,6 +175,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 4px 8px;
   border-bottom: 1px solid #f1f3f5;
   border-radius: 16px;
+  background: linear-gradient(135deg, #fff5f5 0%, #f8f9fa 100%);
+  position: relative;
 }
 
 .node-header h3 {
@@ -183,6 +185,34 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 600;
   color: #495057;
   letter-spacing: -0.2px;
+}
+
+.node-remove-button {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100%;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.node-remove-button:hover {
+  background: #dc3545;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.node-remove-button:active {
+  transform: scale(0.95);
 }
 
 .node-icon {
@@ -242,17 +272,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-color: #adb5bd;
 }
 
-.reverb-effect-node .node-header {
-  background: linear-gradient(135deg, #fff5f5 0%, #f8f9fa 100%);
-}
-
-.audio-input-node .node-header {
-  background: linear-gradient(135deg, #fff5f5 0%, #f8f9fa 100%);
-}
-
-.audio-output-node .node-header {
-  background: linear-gradient(135deg, #fff5f5 0%, #f8f9fa 100%);
-}
 
 /* Node status styling */
 .node-status {
