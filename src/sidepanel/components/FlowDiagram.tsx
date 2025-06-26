@@ -12,12 +12,15 @@ import ReactFlow, {
   BackgroundVariant,
   NodeChange,
   applyNodeChanges,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import ReverbEffectNode from './nodes/ReverbEffectNode';
 import AudioInputNode from './nodes/AudioInputNode';
 import AudioOutputNode from './nodes/AudioOutputNode';
 import MaxStyleEdge from './edges/MaxStyleEdge';
+import AddEffectButton from './AddEffectButton';
 
 const nodeTypes = {
   audioInput: AudioInputNode,
@@ -41,7 +44,10 @@ interface FlowDiagramProps {
   onReverbChange: (value: number) => void;
 }
 
-const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange, onReverbChange }) => {
+const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange, onReverbChange }) => {
+  const [nodeIdCounter, setNodeIdCounter] = React.useState(4);
+  const { project, getViewport } = useReactFlow();
+  
   const initialNodes: Node[] = [
     {
       id: '1',
@@ -88,6 +94,26 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange,
     [setEdges]
   );
 
+  const handleAddEffect = useCallback((effectType: string) => {
+    if (effectType === 'reverb') {
+      // Get the current viewport
+      const viewport = getViewport();
+      
+      // Calculate the center of the viewport
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNode: Node = {
+        id: nodeIdCounter.toString(),
+        type: 'reverbEffect',
+        data: { value: 0, onChange: (value: number) => console.log('New reverb:', value) },
+        position: { x: centerX - 110, y: centerY - 75 }, // Offset by half the node size
+      };
+      setNodes((nds) => [...nds, newNode]);
+      setNodeIdCounter((prev) => prev + 1);
+    }
+  }, [nodeIdCounter, setNodes, getViewport]);
+
   // Update node data when props change
   React.useEffect(() => {
     setNodes((nds) =>
@@ -113,6 +139,7 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange,
     <div style={{ 
       height: '100%', 
       width: '100%',
+      position: 'relative',
     }}>
       <ReactFlow
         nodes={nodes}
@@ -129,7 +156,16 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange,
         <Controls />
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
+      <AddEffectButton onAddEffect={handleAddEffect} />
     </div>
+  );
+};
+
+const FlowDiagram: React.FC<FlowDiagramProps> = (props) => {
+  return (
+    <ReactFlowProvider>
+      <FlowDiagramInner {...props} />
+    </ReactFlowProvider>
   );
 };
 

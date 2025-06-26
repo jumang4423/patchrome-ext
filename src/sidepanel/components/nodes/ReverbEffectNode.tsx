@@ -6,14 +6,14 @@ interface ReverbEffectNodeData {
   onChange: (value: number) => void;
 }
 
-const ReverbEffectNode = memo(({ data, isConnectable }: NodeProps<ReverbEffectNodeData>) => {
+const ReverbEffectNode = memo(({ data, isConnectable, selected }: NodeProps<ReverbEffectNodeData>) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value, 10);
     data.onChange(newValue);
   };
 
   return (
-    <div className="custom-node reverb-effect-node">
+    <div className={`custom-node reverb-effect-node ${selected ? 'selected' : ''}`}>
       <Handle
         type="target"
         position={Position.Left}

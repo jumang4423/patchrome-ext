@@ -6,14 +6,14 @@ interface AudioInputNodeData {
   onSpeedChange: (value: number) => void;
 }
 
-const AudioInputNode = memo(({ data, isConnectable }: NodeProps<AudioInputNodeData>) => {
+const AudioInputNode = memo(({ data, isConnectable, selected }: NodeProps<AudioInputNodeData>) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseFloat(e.target.value);
     data.onSpeedChange(newValue);
   };
 
   return (
-    <div className="custom-node audio-input-node">
+    <div className={`custom-node audio-input-node ${selected ? 'selected' : ''}`}>
       <div className="node-header">
         <div className="node-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

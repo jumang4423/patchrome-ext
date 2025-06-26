@@ -1,9 +1,9 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 
-const AudioOutputNode = memo(({ isConnectable }: NodeProps) => {
+const AudioOutputNode = memo(({ isConnectable, selected }: NodeProps) => {
   return (
-    <div className="custom-node audio-output-node">
+    <div className={`custom-node audio-output-node ${selected ? 'selected' : ''}`}>
       <Handle
         type="target"
         position={Position.Left}

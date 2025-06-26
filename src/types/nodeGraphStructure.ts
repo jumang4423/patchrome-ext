@@ -1,38 +1,66 @@
-export type NodeType = 'input' | 'effect' | 'output';
+export type NodeType = 'input' | 'reverb' | 'output';
 export type EffectNodeType = 'reverb';
+export type ValueType = 'percentage' | 'number';
 
 export interface BaseNode {
   id: string;
   type: NodeType;
   position: { x: number; y: number };
+  data: Record<string, any>;
+  deletable: boolean;
 }
 
+// input
 export interface InputNode extends BaseNode {
   type: 'input';
   data: {
     speed: number;
   };
+  deletable: false;
 }
 
-export interface EffectNode extends BaseNode {
-  type: 'effect';
-  data: {
-    effectType:  EffectNodeType;
-    params: ReverbParams;
-  };
-}
+export const InputParamDOM = [
+  {
+     label: 'Speed', 
+     key: 'speed',
+     min: 0.5,
+     max: 1.5,
+     step: 0.01,
+     valueType: 'number'
+  },
+];
 
-export interface ReverbParams {
+// reverb
+export interface ReverbNode extends BaseNode {
   type: 'reverb';
-  mix: number;
+  data: {
+    mix: number;
+  };
+  deletable: true;
 }
+
+export const ReverbParamDOM = [
+  {
+     label: 'Mix',
+     key: 'mix', 
+     min: 0,
+     max: 100,
+     step: 1,
+     valueType: 'percentage'
+  },
+];
+
+// output
 
 export interface OutputNode extends BaseNode {
   type: 'output';
-  data: Record<string, never>;
+  data: {};
+  deletable: false;
 }
 
-export type AudioNode = InputNode | EffectNode | OutputNode;
+export const OutputParamDOM = [];
+
+export type AudioNode = InputNode | ReverbNode | OutputNode;
 
 export interface Connection {
   id: string;
