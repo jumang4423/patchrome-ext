@@ -1,6 +1,6 @@
-export type NodeType = 'input' | 'reverb' | 'delay' | 'gain' | 'output';
-export type EffectNodeType = 'reverb' | 'delay' | 'gain';
-export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter';
+export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean';
 
 export interface BaseNode {
   id: string;
@@ -9,6 +9,25 @@ export interface BaseNode {
   data: Record<string, any>;
   deletable: boolean;
 }
+
+export interface BaseParamConfig {
+  label: string;
+  key: string;
+  valueType: ValueType;
+}
+
+export interface SliderParamConfig extends BaseParamConfig {
+  valueType: 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan';
+  min: number;
+  max: number;
+  step: number;
+}
+
+export interface BooleanParamConfig extends BaseParamConfig {
+  valueType: 'boolean';
+}
+
+export type ParamConfig = SliderParamConfig | BooleanParamConfig;
 
 // input
 export interface InputNode extends BaseNode {
@@ -19,7 +38,7 @@ export interface InputNode extends BaseNode {
   deletable: false;
 }
 
-export const InputParamDOM = [
+export const InputParamDOM: ParamConfig[] = [
   {
      label: 'Speed', 
      key: 'speed',
@@ -41,7 +60,7 @@ export interface ReverbNode extends BaseNode {
   deletable: true;
 }
 
-export const ReverbParamDOM = [
+export const ReverbParamDOM: ParamConfig[] = [
   {
      label: 'Mix',
      key: 'mix', 
@@ -79,7 +98,7 @@ export interface DelayNode extends BaseNode {
   deletable: true;
 }
 
-export const DelayParamDOM = [
+export const DelayParamDOM: ParamConfig[] = [
   {
      label: 'Mix',
      key: 'mix', 
@@ -106,24 +125,25 @@ export const DelayParamDOM = [
   },
 ];
 
-// gain
-export interface GainNode extends BaseNode {
-  type: 'gain';
+// utility
+export interface UtilityNode extends BaseNode {
+  type: 'utility';
   data: {
     volume: number;
     pan: number;
+    reverse: boolean;
   };
   deletable: true;
 }
 
-export const GainParamDOM = [
+export const UtilityParamDOM: ParamConfig[] = [
   {
      label: 'Volume',
      key: 'volume', 
      min: -60,
      max: 12,
      step: 0.1,
-     valueType: 'decibels'
+     valueType: 'decibels' as ValueType
   },
   {
      label: 'Pan',
@@ -131,7 +151,41 @@ export const GainParamDOM = [
      min: -100,
      max: 100,
      step: 1,
-     valueType: 'pan'
+     valueType: 'pan' as ValueType
+  },
+  {
+     label: 'Phase Reversal',
+     key: 'reverse',
+     valueType: 'boolean' as ValueType
+  }
+];
+
+// limiter
+export interface LimiterNode extends BaseNode {
+  type: 'limiter';
+  data: {
+    threshold: number;
+    mix: number;
+  };
+  deletable: true;
+}
+
+export const LimiterParamDOM: ParamConfig[] = [
+  {
+     label: 'Threshold',
+     key: 'threshold', 
+     min: -60,
+     max: 0,
+     step: 0.1,
+     valueType: 'decibels'
+  },
+  {
+     label: 'Mix',
+     key: 'mix', 
+     min: 0,
+     max: 100,
+     step: 1,
+     valueType: 'percentage'
   },
 ];
 
@@ -143,9 +197,9 @@ export interface OutputNode extends BaseNode {
   deletable: false;
 }
 
-export const OutputParamDOM = [];
+export const OutputParamDOM: ParamConfig[] = [];
 
-export type AudioNode = InputNode | ReverbNode | DelayNode | GainNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | OutputNode;
 
 export interface Connection {
   id: string;

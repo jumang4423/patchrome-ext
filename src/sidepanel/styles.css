@@ -293,6 +293,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .node-content {
   padding: 14px;
+  padding-bottom: 0px;
 }
 
 .node-slider-container {
@@ -423,6 +424,52 @@ input[type="range"]::-webkit-slider-thumb:hover {
   letter-spacing: 0.5px;
   font-weight: 600;
   line-height: 1;
+}
+
+/* Switch container to match slider container */
+.node-switch-container {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  cursor: default;
+}
+
+.node-switch {
+  background-color: #e9ecef !important;
+}
+
+.node-switch[data-state="checked"] {
+  background-color: #9b59b6 !important;
+}
+
+/* Switch component styles */
+.switch-root {
+  width: 36px;
+  height: 20px;
+  background-color: #e9ecef;
+  border-radius: 9999px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.switch-root[data-state="checked"] {
+  background-color: #9b59b6;
+}
+
+.switch-thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 9999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14);
+  transition: transform 0.2s;
+  transform: translateX(2px);
+}
+
+.switch-root[data-state="checked"] .switch-thumb {
+  transform: translateX(18px);
 }
 
 /* Make sure sliders are interactive */
@@ -580,9 +627,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #ffa502;
 }
 
-.effect-item-icon.gain {
+.effect-item-icon.utility {
   background: rgba(155, 89, 182, 0.1);
   color: #9b59b6;
+}
+
+.effect-item-icon.limiter {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
 }
 
 

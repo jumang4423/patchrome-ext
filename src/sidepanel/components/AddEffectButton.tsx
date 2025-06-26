@@ -88,15 +88,29 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
             </button>
             <button
               className="effect-dropdown-item"
-              onClick={() => handleAddEffect('gain')}
+              onClick={() => handleAddEffect('utility')}
             >
               <div className="effect-item-content">
-                <div className="effect-item-icon gain">
+                <div className="effect-item-icon utility">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M2 12V4M2 8H6M10 12V4M10 8H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <span>Gain</span>
+                <span>Utility</span>
+              </div>
+            </button>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('limiter')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon limiter">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8H14M2 4H14M2 12H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <rect x="6" y="6" width="4" height="4" stroke="currentColor" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+                <span>Limiter</span>
               </div>
             </button>
           </div>

@@ -25,6 +25,7 @@ import MenuButton from './MenuButton';
 import InfoModal from './InfoModal';
 import LogoButton from './LogoButton';
 import { AudioGraphData } from '../../shared/types';
+import { AUDIO_PARAM_DEFAULTS } from '../../constants/audioDefaults';
 
 const nodeTypes = {
   unifiedAudio: UnifiedAudioNode,
@@ -62,23 +63,29 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       };
       
       if (node.data.type === 'input') {
-        baseNode.params = { speed: node.data.speed || 1.0 };
+        baseNode.params = { speed: node.data.speed ?? AUDIO_PARAM_DEFAULTS.input.speed };
       } else if (node.data.type === 'reverb') {
         baseNode.params = { 
-          mix: node.data.mix || 0,
-          decay: node.data.decay !== undefined ? node.data.decay : 1000,
-          size: node.data.size !== undefined ? node.data.size : 50
+          mix: node.data.mix ?? AUDIO_PARAM_DEFAULTS.reverb.mix,
+          decay: node.data.decay ?? AUDIO_PARAM_DEFAULTS.reverb.decay,
+          size: node.data.size ?? AUDIO_PARAM_DEFAULTS.reverb.size
         };
       } else if (node.data.type === 'delay') {
         baseNode.params = { 
-          mix: node.data.mix || 0,
-          delayTime: node.data.delayTime !== undefined ? node.data.delayTime : 500,
-          feedback: node.data.feedback !== undefined ? node.data.feedback : 50
+          mix: node.data.mix ?? AUDIO_PARAM_DEFAULTS.delay.mix,
+          delayTime: node.data.delayTime ?? AUDIO_PARAM_DEFAULTS.delay.delayTime,
+          feedback: node.data.feedback ?? AUDIO_PARAM_DEFAULTS.delay.feedback
         };
-      } else if (node.data.type === 'gain') {
+      } else if (node.data.type === 'utility') {
         baseNode.params = { 
-          volume: node.data.volume !== undefined ? node.data.volume : 0,
-          pan: node.data.pan !== undefined ? node.data.pan : 0
+          volume: node.data.volume ?? AUDIO_PARAM_DEFAULTS.utility.volume,
+          pan: node.data.pan ?? AUDIO_PARAM_DEFAULTS.utility.pan,
+          reverse: node.data.reverse ?? AUDIO_PARAM_DEFAULTS.utility.reverse
+        };
+      } else if (node.data.type === 'limiter') {
+        baseNode.params = { 
+          threshold: node.data.threshold ?? AUDIO_PARAM_DEFAULTS.limiter.threshold,
+          mix: node.data.mix ?? AUDIO_PARAM_DEFAULTS.limiter.mix
         };
       }
       
@@ -151,7 +158,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       type: 'unifiedAudio',
       data: { 
         type: 'input' as const,
-        speed: 1.0,
+        ...AUDIO_PARAM_DEFAULTS.input,
         deletable: false,
         onChange: (key: string, value: number) => {
           if (key === 'speed') {
@@ -189,7 +196,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           ...baseNode,
           data: {
             type: 'input' as const,
-            speed: node.params.speed || 1.0,
+            speed: node.params.speed ?? AUDIO_PARAM_DEFAULTS.input.speed,
             deletable: false,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -201,9 +208,9 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           ...baseNode,
           data: {
             type: 'reverb' as const,
-            mix: node.params.mix || 0,
-            decay: node.params.decay !== undefined ? node.params.decay : 1000,
-            size: node.params.size !== undefined ? node.params.size : 50,
+            mix: node.params.mix ?? AUDIO_PARAM_DEFAULTS.reverb.mix,
+            decay: node.params.decay ?? AUDIO_PARAM_DEFAULTS.reverb.decay,
+            size: node.params.size ?? AUDIO_PARAM_DEFAULTS.reverb.size,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -216,9 +223,9 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           ...baseNode,
           data: {
             type: 'delay' as const,
-            mix: node.params.mix || 0,
-            delayTime: node.params.delayTime !== undefined ? node.params.delayTime : 500,
-            feedback: node.params.feedback !== undefined ? node.params.feedback : 50,
+            mix: node.params.mix ?? AUDIO_PARAM_DEFAULTS.delay.mix,
+            delayTime: node.params.delayTime ?? AUDIO_PARAM_DEFAULTS.delay.delayTime,
+            feedback: node.params.feedback ?? AUDIO_PARAM_DEFAULTS.delay.feedback,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -226,13 +233,28 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onRemove: () => handleRemoveNode(node.id)
           }
         };
-      } else if (node.type === 'gain') {
+      } else if (node.type === 'utility') {
         return {
           ...baseNode,
           data: {
-            type: 'gain' as const,
-            volume: node.params.volume !== undefined ? node.params.volume : 0,
-            pan: node.params.pan !== undefined ? node.params.pan : 0,
+            type: 'utility' as const,
+            volume: node.params.volume ?? AUDIO_PARAM_DEFAULTS.utility.volume,
+            pan: node.params.pan ?? AUDIO_PARAM_DEFAULTS.utility.pan,
+            reverse: node.params.reverse ?? AUDIO_PARAM_DEFAULTS.utility.reverse,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'limiter') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'limiter' as const,
+            threshold: node.params.threshold ?? AUDIO_PARAM_DEFAULTS.limiter.threshold,
+            mix: node.params.mix ?? AUDIO_PARAM_DEFAULTS.limiter.mix,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -403,9 +425,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         type: 'unifiedAudio',
         data: { 
           type: 'reverb' as const,
-          mix: 0,
-          decay: 1000,
-          size: 50,
+          ...AUDIO_PARAM_DEFAULTS.reverb,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
@@ -434,9 +454,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         type: 'unifiedAudio',
         data: { 
           type: 'delay' as const,
-          mix: 0,
-          delayTime: 500,
-          feedback: 50,
+          ...AUDIO_PARAM_DEFAULTS.delay,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
@@ -453,7 +471,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       });
       
       setNodeIdCounter((prev) => prev + 1);
-    } else if (effectType === 'gain') {
+    } else if (effectType === 'utility') {
       const viewport = getViewport();
       
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
@@ -464,9 +482,37 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         id: newNodeId,
         type: 'unifiedAudio',
         data: { 
-          type: 'gain' as const,
-          volume: 0,
-          pan: 0,
+          type: 'utility' as const,
+          ...AUDIO_PARAM_DEFAULTS.utility,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'limiter') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'limiter' as const,
+          ...AUDIO_PARAM_DEFAULTS.limiter,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
@@ -578,7 +624,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         fitViewOptions={{ padding: 0.2 }}
         proOptions={{ hideAttribution: true }}
       >
-        <Controls />
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
       <LogoButton onClick={() => setIsInfoModalOpen(true)} />

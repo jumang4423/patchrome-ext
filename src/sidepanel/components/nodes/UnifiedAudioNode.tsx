@@ -1,6 +1,9 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, GainParamDOM, OutputParamDOM, ValueType } from '../../../types/nodeGraphStructure';
+import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
+import { Switch } from '../../../components/ui/switch';
+import { cn } from '../../../lib/utils';
+import { AUDIO_PARAM_DEFAULTS } from '../../../constants/audioDefaults';
 
 interface UnifiedAudioNodeData {
   type: AudioNode['type'];
@@ -33,9 +36,15 @@ const nodeIcons = {
       <circle cx="17" cy="12" r="1.5" fill="#ffa502"/>
     </svg>
   ),
-  gain: (
+  utility: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 17V7M3 12h6M15 17V7M15 12h6" stroke="#9b59b6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  limiter: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 12H20M4 8H20M4 16H20" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="9" y="9" width="6" height="6" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
   output: (
@@ -49,11 +58,12 @@ const nodeHeaders = {
   input: 'Audio Input',
   reverb: 'Reverb',
   delay: 'Delay',
-  gain: 'Gain',
+  utility: 'Utility',
+  limiter: 'Limiter',
   output: 'Audio Output'
 };
 
-const getParamDOM = (type: AudioNode['type']) => {
+const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
   switch (type) {
     case 'input':
       return InputParamDOM;
@@ -61,8 +71,10 @@ const getParamDOM = (type: AudioNode['type']) => {
       return ReverbParamDOM;
     case 'delay':
       return DelayParamDOM;
-    case 'gain':
-      return GainParamDOM;
+    case 'utility':
+      return UtilityParamDOM;
+    case 'limiter':
+      return LimiterParamDOM;
     case 'output':
       return OutputParamDOM;
     default:
@@ -111,6 +123,15 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
     }
   };
 
+  const handleCheckboxChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.checked;
+    console.log(`[UnifiedAudioNode] Boolean parameter changed - Type: ${type}, Key: ${key}, Value: ${newValue}`);
+    
+    if (onChange) {
+      onChange(key, newValue ? 1 : 0);
+    }
+  };
+
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (data.onRemove) {
@@ -150,30 +171,61 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
       {paramDOM.length > 0 && (
         <div className="node-content">
           {paramDOM.map((param) => {
-            const value = data[param.key] as number;
-            const displayValue = param.valueType === 'number' 
-              ? `${formatValue(value, param.valueType as ValueType)}`
-              : formatValue(value, param.valueType as ValueType);
-            
-            return (
-              <div key={param.key} style={{ marginBottom: '16px' }}>
-                <label className="node-label">
-                  <span style={{ marginRight: '8px' }}>{param.label}</span>
-                  <span style={{ color: '#868e96', fontWeight: 'normal' }}>({displayValue})</span>
-                </label>
-                <div className="node-slider-container nodrag">
-                  <input
-                    type="range"
-                    min={param.min}
-                    max={param.max}
-                    step={param.step}
-                    value={value}
-                    onChange={handleChange(param.key, param.valueType as ValueType)}
-                    className="node-slider"
-                  />
+            if (param.valueType === 'boolean') {
+              // Render switch for boolean parameters
+              const isChecked = data[param.key] || false;
+              
+              return (
+                <div key={param.key} style={{ marginBottom: '16px' }}>
+                  <label className="node-label">
+                    <span>{param.label}</span>
+                  </label>
+                  <div className="node-switch-container nodrag">
+                    <Switch
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        if (onChange) {
+                          onChange(param.key, checked ? 1 : 0);
+                        }
+                      }}
+                      className="node-switch"
+                    />
+                  </div>
                 </div>
-              </div>
-            );
+              );
+            } else {
+              // Render slider for numeric parameters
+              const value = data[param.key] as number;
+              const displayValue = param.valueType === 'number' 
+                ? `${formatValue(value, param.valueType as ValueType)}`
+                : formatValue(value, param.valueType as ValueType);
+              
+              return (
+                <div key={param.key} style={{ marginBottom: '16px' }}>
+                  <label className="node-label">
+                    <span style={{ marginRight: '8px' }}>{param.label}</span>
+                    <span style={{ color: '#868e96', fontWeight: 'normal' }}>({displayValue})</span>
+                  </label>
+                  <div className="node-slider-container nodrag">
+                    <input
+                      type="range"
+                      min={'min' in param ? param.min : 0}
+                      max={'max' in param ? param.max : 100}
+                      step={'step' in param ? param.step : 1}
+                      value={value}
+                      onChange={handleChange(param.key, param.valueType as ValueType)}
+                      onDoubleClick={() => {
+                        const defaultValue = AUDIO_PARAM_DEFAULTS[type]?.[param.key as keyof typeof AUDIO_PARAM_DEFAULTS[typeof type]];
+                        if (defaultValue !== undefined && onChange) {
+                          onChange(param.key, defaultValue as number);
+                        }
+                      }}
+                      className="node-slider"
+                    />
+                  </div>
+                </div>
+              );
+            }
           })}
         </div>
       )}

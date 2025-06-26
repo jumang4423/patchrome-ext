@@ -173,11 +173,14 @@
         connections.push({ from: delayNode, to: wetGain });
         connections.push({ from: wetGain, to: merger });
         connections.push({ from: dryGain, to: merger });
-      } else if (node.type === 'gain') {
-        // Create gain node with volume and panning
+      } else if (node.type === 'utility') {
+        // Create utility node with volume and panning
         const inputGain = audioContext.createGain();
         const gainNode = audioContext.createGain();
         const pannerNode = audioContext.createStereoPanner();
+        const splitter = audioContext.createChannelSplitter(2);
+        const merger = audioContext.createChannelMerger(2);
+        const rightPhaseGain = audioContext.createGain();
         
         // Convert dB to linear gain (-inf dB = 0, 0 dB = 1, +12 dB = ~4)
         const volumeDb = node.params.volume !== undefined ? node.params.volume : 0;
@@ -193,22 +196,95 @@
         const panValue = node.params.pan !== undefined ? node.params.pan / 100 : 0;
         pannerNode.pan.value = panValue;
         
-        // Connect routing: input -> gain -> panner
-        inputGain.connect(gainNode);
+        // Set phase reversal for right channel
+        const phaseReverse = node.params.reverse !== undefined ? node.params.reverse : false;
+        rightPhaseGain.gain.value = phaseReverse ? -1 : 1;
+        
+        // Connect routing based on phase reversal
+        if (phaseReverse) {
+          // With phase reversal: input -> gain -> splitter -> merger (with right channel inverted) -> panner
+          inputGain.connect(gainNode);
+          gainNode.connect(splitter);
+          
+          // Left channel: direct connection
+          splitter.connect(merger, 0, 0);
+          
+          // Right channel: phase inverted
+          splitter.connect(rightPhaseGain, 1);
+          rightPhaseGain.connect(merger, 0, 1);
+          
+          merger.connect(pannerNode);
+        } else {
+          // Without phase reversal: simple routing
+          inputGain.connect(gainNode);
+          gainNode.connect(pannerNode);
+        }
         
         nodes.set(node.id, {
-          type: 'gain',
+          type: 'utility',
           input: inputGain,
           output: pannerNode,
           inputGain,
           gainNode,
           pannerNode,
+          splitter,
+          merger,
+          rightPhaseGain,
           params: node.params,
           audioContext
         });
         
         // Store internal connections
-        connections.push({ from: gainNode, to: pannerNode });
+        if (phaseReverse) {
+          connections.push({ from: gainNode, to: splitter });
+          connections.push({ from: rightPhaseGain, to: merger });
+          connections.push({ from: merger, to: pannerNode });
+        } else {
+          connections.push({ from: gainNode, to: pannerNode });
+        }
+      } else if (node.type === 'limiter') {
+        // Create limiter effect chain
+        const inputGain = audioContext.createGain();
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        const compressor = audioContext.createDynamicsCompressor();
+        const merger = audioContext.createGain();
+        
+        // Set up limiter parameters
+        const thresholdDb = node.params.threshold !== undefined ? node.params.threshold : -6;
+        compressor.threshold.value = thresholdDb;
+        compressor.knee.value = 0; // Hard knee for limiting
+        compressor.ratio.value = 20; // High ratio for limiting effect
+        compressor.attack.value = 0.003; // Fast attack
+        compressor.release.value = 0.1; // Moderate release
+        
+        // Set up wet/dry mix
+        const wetAmount = (node.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        dryGain.gain.value = dryAmount;
+        wetGain.gain.value = wetAmount;
+        
+        // Connect internal routing
+        inputGain.connect(dryGain);
+        inputGain.connect(compressor);
+        
+        nodes.set(node.id, {
+          type: 'limiter',
+          input: inputGain,
+          output: merger,
+          inputGain,
+          dryGain,
+          wetGain,
+          compressor,
+          merger,
+          params: node.params,
+          audioContext
+        });
+        
+        // Store internal connections
+        connections.push({ from: compressor, to: wetGain });
+        connections.push({ from: wetGain, to: merger });
+        connections.push({ from: dryGain, to: merger });
       } else if (node.type === 'output') {
         // Add a master gain to control overall volume
         const masterGain = audioContext.createGain();
@@ -236,8 +312,11 @@
           } else if (targetNode.type === 'delay') {
             // Connect to delay input
             sourceNode.audioNode.connect(targetNode.inputGain);
-          } else if (targetNode.type === 'gain') {
+          } else if (targetNode.type === 'utility') {
             // Connect to gain input
+            sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect to limiter input
             sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
@@ -249,8 +328,11 @@
           } else if (targetNode.type === 'delay') {
             // Connect reverb output to delay input
             sourceNode.output.connect(targetNode.inputGain);
-          } else if (targetNode.type === 'gain') {
+          } else if (targetNode.type === 'utility') {
             // Connect reverb output to gain input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect reverb output to limiter input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -262,21 +344,43 @@
           } else if (targetNode.type === 'delay') {
             // Connect delay output to next delay input
             sourceNode.output.connect(targetNode.inputGain);
-          } else if (targetNode.type === 'gain') {
+          } else if (targetNode.type === 'utility') {
             // Connect delay output to gain input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect delay output to limiter input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
-        } else if (sourceNode.type === 'gain') {
+        } else if (sourceNode.type === 'utility') {
           if (targetNode.type === 'reverb') {
-            // Connect gain output to reverb input
+            // Connect utility output to reverb input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'delay') {
-            // Connect gain output to delay input
+            // Connect utility output to delay input
             sourceNode.output.connect(targetNode.inputGain);
-          } else if (targetNode.type === 'gain') {
-            // Connect gain output to next gain input
+          } else if (targetNode.type === 'utility') {
+            // Connect utility output to next utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect utility output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'limiter') {
+          if (targetNode.type === 'reverb') {
+            // Connect limiter output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect limiter output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect limiter output to gain input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect limiter output to next limiter input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -375,7 +479,7 @@
         node.params = { ...graphNode.params };
         
         console.log(`Patchrome: Updated delay ${nodeId} - wet: ${wetAmount}, dry: ${dryAmount}, delay: ${delayTime}s, feedback: ${feedbackAmount}`);
-      } else if (node.type === 'gain' && node.gainNode && node.pannerNode) {
+      } else if (node.type === 'utility' && node.gainNode && node.pannerNode) {
         // Update volume (convert dB to linear)
         const volumeDb = graphNode.params.volume !== undefined ? graphNode.params.volume : 0;
         let gainValue;
@@ -393,10 +497,59 @@
         node.gainNode.gain.setValueAtTime(gainValue, currentTime);
         node.pannerNode.pan.setValueAtTime(panValue, currentTime);
         
+        // Handle phase reversal update
+        const newPhaseReverse = graphNode.params.reverse !== undefined ? graphNode.params.reverse : false;
+        const oldPhaseReverse = node.params.reverse !== undefined ? node.params.reverse : false;
+        
+        if (newPhaseReverse !== oldPhaseReverse && node.rightPhaseGain) {
+          // Update phase inversion
+          node.rightPhaseGain.gain.setValueAtTime(newPhaseReverse ? -1 : 1, currentTime);
+          
+          // Reconnect nodes based on new phase reversal state
+          try {
+            // Disconnect existing connections
+            node.gainNode.disconnect();
+            if (node.splitter) node.splitter.disconnect();
+            if (node.merger) node.merger.disconnect();
+            if (node.rightPhaseGain) node.rightPhaseGain.disconnect();
+            
+            if (newPhaseReverse) {
+              // With phase reversal
+              node.gainNode.connect(node.splitter);
+              node.splitter.connect(node.merger, 0, 0);
+              node.splitter.connect(node.rightPhaseGain, 1);
+              node.rightPhaseGain.connect(node.merger, 0, 1);
+              node.merger.connect(node.pannerNode);
+            } else {
+              // Without phase reversal
+              node.gainNode.connect(node.pannerNode);
+            }
+          } catch (e) {
+            console.error('Patchrome: Error updating gain phase reversal:', e);
+          }
+        }
+        
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated gain ${nodeId} - volume: ${volumeDb}dB (${gainValue}), pan: ${panValue}`);
+        console.log(`Patchrome: Updated utility ${nodeId} - volume: ${volumeDb}dB (${gainValue}), pan: ${panValue}, reverse: ${newPhaseReverse}`);
+      } else if (node.type === 'limiter' && node.wetGain && node.dryGain) {
+        const wetAmount = (graphNode.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        
+        // Update threshold
+        const thresholdDb = graphNode.params.threshold !== undefined ? graphNode.params.threshold : -6;
+        node.compressor.threshold.setValueAtTime(thresholdDb, currentTime);
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated limiter ${nodeId} - threshold: ${thresholdDb}dB, wet: ${wetAmount}, dry: ${dryAmount}`);
       }
     });
   }
@@ -442,6 +595,15 @@
       }
       if (node.pannerNode) {
         try { node.pannerNode.disconnect(); } catch(e) {}
+      }
+      if (node.splitter) {
+        try { node.splitter.disconnect(); } catch(e) {}
+      }
+      if (node.rightPhaseGain) {
+        try { node.rightPhaseGain.disconnect(); } catch(e) {}
+      }
+      if (node.compressor) {
+        try { node.compressor.disconnect(); } catch(e) {}
       }
       if (node.masterGain) {
         try { node.masterGain.disconnect(); } catch(e) {}
