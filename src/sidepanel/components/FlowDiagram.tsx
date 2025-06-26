@@ -46,13 +46,13 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange,
       id: '2',
       type: 'reverbEffect',
       data: { value: reverb, onChange: onReverbChange },
-      position: { x: 400, y: 150 },
+      position: { x: 100, y: 350 },
     },
     {
       id: '3',
       type: 'audioOutput',
       data: {},
-      position: { x: 700, y: 150 },
+      position: { x: 100, y: 550 },
     },
   ];
 
