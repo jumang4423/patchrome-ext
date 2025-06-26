@@ -9,46 +9,53 @@ import ReactFlow, {
   Controls,
   Background,
   MiniMap,
+  BackgroundVariant,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import ReverbEffectNode from './nodes/ReverbEffectNode';
+import AudioInputNode from './nodes/AudioInputNode';
+import AudioOutputNode from './nodes/AudioOutputNode';
 
-const initialNodes: Node[] = [
-  {
-    id: '1',
-    type: 'input',
-    data: { label: 'Audio Input' },
-    position: { x: 150, y: 50 },
-  },
-  {
-    id: '2',
-    data: { label: 'Speed Control' },
-    position: { x: 150, y: 150 },
-  },
-  {
-    id: '3',
-    data: { label: 'Reverb Effect' },
-    position: { x: 150, y: 250 },
-  },
-  {
-    id: '4',
-    type: 'output',
-    data: { label: 'Audio Output' },
-    position: { x: 150, y: 350 },
-  },
-];
+const nodeTypes = {
+  audioInput: AudioInputNode,
+  reverbEffect: ReverbEffectNode,
+  audioOutput: AudioOutputNode,
+};
 
 const initialEdges: Edge[] = [
   { id: 'e1-2', source: '1', target: '2' },
   { id: 'e2-3', source: '2', target: '3' },
-  { id: 'e3-4', source: '3', target: '4' },
 ];
 
 interface FlowDiagramProps {
   speed: number;
   reverb: number;
+  onSpeedChange: (value: number) => void;
+  onReverbChange: (value: number) => void;
 }
 
-const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb }) => {
+const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange, onReverbChange }) => {
+  const initialNodes: Node[] = [
+    {
+      id: '1',
+      type: 'audioInput',
+      data: { speedValue: speed, onSpeedChange: onSpeedChange },
+      position: { x: 100, y: 150 },
+    },
+    {
+      id: '2',
+      type: 'reverbEffect',
+      data: { value: reverb, onChange: onReverbChange },
+      position: { x: 400, y: 150 },
+    },
+    {
+      id: '3',
+      type: 'audioOutput',
+      data: {},
+      position: { x: 700, y: 150 },
+    },
+  ];
+
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -57,31 +64,31 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb }) => {
     [setEdges]
   );
 
-  // Update node labels based on current values
+  // Update node data when props change
   React.useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
+        if (node.id === '1') {
+          return {
+            ...node,
+            data: { speedValue: speed, onSpeedChange: onSpeedChange },
+          };
+        }
         if (node.id === '2') {
           return {
             ...node,
-            data: { label: `Speed Control (${speed.toFixed(2)}x)` },
-          };
-        }
-        if (node.id === '3') {
-          return {
-            ...node,
-            data: { label: `Reverb Effect (${reverb}%)` },
+            data: { value: reverb, onChange: onReverbChange },
           };
         }
         return node;
       })
     );
-  }, [speed, reverb, setNodes]);
+  }, [speed, reverb, onSpeedChange, onReverbChange, setNodes]);
 
   return (
     <div style={{ 
-      height: 'calc(100vh - 150px)', 
-      width: 'calc(100% - 10px)',
+      height: '100%', 
+      width: '100%',
     }}>
       <ReactFlow
         nodes={nodes}
@@ -89,11 +96,12 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb }) => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
       >
         <Controls />
-        <Background variant="dots" gap={12} size={1} />
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
     </div>
   );

@@ -16,14 +16,42 @@
   const audioNodes = new WeakMap();
   
   // Create reverb impulse response
-  function createReverbImpulse(audioContext, duration = 2, decay = 2) {
+  function createReverbImpulse(audioContext, duration = 0.6, decay = 3.5) {
     const length = audioContext.sampleRate * duration;
     const impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
     
     for (let channel = 0; channel < 2; channel++) {
       const channelData = impulse.getChannelData(channel);
+      
+      // Add early reflections for live house character
+      const earlyReflections = [
+        { time: 0.015, gain: 0.5 },
+        { time: 0.025, gain: 0.3 },
+        { time: 0.035, gain: 0.2 },
+        { time: 0.045, gain: 0.15 }
+      ];
+      
       for (let i = 0; i < length; i++) {
-        channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        const t = i / audioContext.sampleRate;
+        let sample = 0;
+        
+        // Add early reflections
+        for (const reflection of earlyReflections) {
+          const reflectionSample = Math.floor(reflection.time * audioContext.sampleRate);
+          if (i === reflectionSample) {
+            sample += (Math.random() * 2 - 1) * reflection.gain;
+          }
+        }
+        
+        // Add diffuse reverb tail with faster decay
+        sample += (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay) * 0.5;
+        
+        // Apply slight stereo spread
+        if (channel === 1) {
+          sample *= 0.9 + Math.random() * 0.2;
+        }
+        
+        channelData[i] = sample;
       }
     }
     

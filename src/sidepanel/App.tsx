@@ -54,27 +54,12 @@ const App: React.FC = () => {
 
   return (
     <div className="container">
-      <Slider
-        label="Speed"
-        value={settings.speed}
-        min={0.5}
-        max={1.5}
-        step={0.01}
-        onChange={handleSpeedChange}
-        formatValue={(value) => `${value.toFixed(2)}x`}
+      <FlowDiagram 
+        speed={settings.speed} 
+        reverb={settings.reverb}
+        onSpeedChange={handleSpeedChange}
+        onReverbChange={handleReverbChange}
       />
-      
-      <Slider
-        label="Reverb"
-        value={settings.reverb}
-        min={0}
-        max={100}
-        step={1}
-        onChange={handleReverbChange}
-        formatValue={(value) => `${value}%`}
-      />
-      
-      <FlowDiagram speed={settings.speed} reverb={settings.reverb} />
     </div>
   );
 };
