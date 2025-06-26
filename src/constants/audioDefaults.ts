@@ -18,8 +18,11 @@ export const AUDIO_PARAM_DEFAULTS = {
     reverse: false
   },
   limiter: {
-    threshold: -6,
-    mix: 100
+    threshold: -6
+  },
+  distortion: {
+    drive: 50,
+    mix: 50
   },
   output: {}
 } as const;

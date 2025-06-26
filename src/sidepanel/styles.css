@@ -637,6 +637,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #e74c3c;
 }
 
+.effect-item-icon.distortion {
+  background: rgba(243, 156, 18, 0.1);
+  color: #f39c12;
+}
 
 .effect-item-shortcut {
   font-size: 12px;

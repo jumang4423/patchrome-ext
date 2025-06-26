@@ -113,6 +113,21 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
                 <span>Limiter</span>
               </div>
             </button>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('distortion')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon distortion">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1L1 8L8 15L15 8L8 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5 8L11 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 5L8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <span>Distortion</span>
+              </div>
+            </button>
           </div>
         </div>
       )}

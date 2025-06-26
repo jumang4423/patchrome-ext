@@ -245,10 +245,7 @@
       } else if (node.type === 'limiter') {
         // Create limiter effect chain
         const inputGain = audioContext.createGain();
-        const dryGain = audioContext.createGain();
-        const wetGain = audioContext.createGain();
         const compressor = audioContext.createDynamicsCompressor();
-        const merger = audioContext.createGain();
         
         // Set up limiter parameters
         const thresholdDb = node.params.threshold !== undefined ? node.params.threshold : -6;
@@ -258,6 +255,46 @@
         compressor.attack.value = 0.003; // Fast attack
         compressor.release.value = 0.1; // Moderate release
         
+        // Connect internal routing (direct connection, no wet/dry mix)
+        inputGain.connect(compressor);
+        
+        nodes.set(node.id, {
+          type: 'limiter',
+          input: inputGain,
+          output: compressor,
+          inputGain,
+          compressor,
+          params: node.params,
+          audioContext
+        });
+        
+        // No internal connections needed for simple chain
+      } else if (node.type === 'distortion') {
+        // Create distortion effect chain
+        const inputGain = audioContext.createGain();
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        const waveShaper = audioContext.createWaveShaper();
+        const merger = audioContext.createGain();
+        
+        // Set up distortion parameters
+        const drive = node.params.drive !== undefined ? node.params.drive : 50;
+        const amount = drive * 2.5; // Scale drive to a reasonable range (was 50, now 1/20th = 2.5)
+        
+        // Create distortion curve
+        const samples = 44100;
+        const curve = new Float32Array(samples);
+        const deg = Math.PI / 180;
+        
+        for (let i = 0; i < samples; i++) {
+          const x = (i * 2) / samples - 1;
+          // Soft clipping curve with adjustable amount
+          curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+        }
+        
+        waveShaper.curve = curve;
+        waveShaper.oversample = '4x'; // Better quality
+        
         // Set up wet/dry mix
         const wetAmount = (node.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
@@ -266,23 +303,23 @@
         
         // Connect internal routing
         inputGain.connect(dryGain);
-        inputGain.connect(compressor);
+        inputGain.connect(waveShaper);
         
         nodes.set(node.id, {
-          type: 'limiter',
+          type: 'distortion',
           input: inputGain,
           output: merger,
           inputGain,
           dryGain,
           wetGain,
-          compressor,
+          waveShaper,
           merger,
           params: node.params,
           audioContext
         });
         
         // Store internal connections
-        connections.push({ from: compressor, to: wetGain });
+        connections.push({ from: waveShaper, to: wetGain });
         connections.push({ from: wetGain, to: merger });
         connections.push({ from: dryGain, to: merger });
       } else if (node.type === 'output') {
@@ -318,6 +355,9 @@
           } else if (targetNode.type === 'limiter') {
             // Connect to limiter input
             sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect to distortion input
+            sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
           }
@@ -333,6 +373,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'limiter') {
             // Connect reverb output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect reverb output to distortion input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -350,6 +393,9 @@
           } else if (targetNode.type === 'limiter') {
             // Connect delay output to limiter input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect delay output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -366,6 +412,9 @@
           } else if (targetNode.type === 'limiter') {
             // Connect utility output to limiter input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect utility output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -381,6 +430,28 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'limiter') {
             // Connect limiter output to next limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect limiter output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'distortion') {
+          if (targetNode.type === 'reverb') {
+            // Connect distortion output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect distortion output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect distortion output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect distortion output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect distortion output to next distortion input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -533,14 +604,9 @@
         node.params = { ...graphNode.params };
         
         console.log(`Patchrome: Updated utility ${nodeId} - volume: ${volumeDb}dB (${gainValue}), pan: ${panValue}, reverse: ${newPhaseReverse}`);
-      } else if (node.type === 'limiter' && node.wetGain && node.dryGain) {
-        const wetAmount = (graphNode.params.mix || 0) / 100;
-        const dryAmount = 1 - wetAmount;
-        
+      } else if (node.type === 'limiter' && node.compressor) {
         // Use setValueAtTime for immediate parameter changes
         const currentTime = audioContexts.get(element)?.currentTime || 0;
-        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
-        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
         
         // Update threshold
         const thresholdDb = graphNode.params.threshold !== undefined ? graphNode.params.threshold : -6;
@@ -549,7 +615,37 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated limiter ${nodeId} - threshold: ${thresholdDb}dB, wet: ${wetAmount}, dry: ${dryAmount}`);
+        console.log(`Patchrome: Updated limiter ${nodeId} - threshold: ${thresholdDb}dB`);
+      } else if (node.type === 'distortion' && node.wetGain && node.dryGain) {
+        const wetAmount = (graphNode.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        
+        // Update drive by regenerating the curve
+        const drive = graphNode.params.drive !== undefined ? graphNode.params.drive : 50;
+        const amount = drive * 2.5; // Scale drive to a reasonable range (was 50, now 1/20th = 2.5)
+        
+        // Create new distortion curve
+        const samples = 44100;
+        const curve = new Float32Array(samples);
+        const deg = Math.PI / 180;
+        
+        for (let i = 0; i < samples; i++) {
+          const x = (i * 2) / samples - 1;
+          // Soft clipping curve with adjustable amount
+          curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+        }
+        
+        node.waveShaper.curve = curve;
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated distortion ${nodeId} - drive: ${drive}%, wet: ${wetAmount}, dry: ${dryAmount}`);
       }
     });
   }
@@ -604,6 +700,9 @@
       }
       if (node.compressor) {
         try { node.compressor.disconnect(); } catch(e) {}
+      }
+      if (node.waveShaper) {
+        try { node.waveShaper.disconnect(); } catch(e) {}
       }
       if (node.masterGain) {
         try { node.masterGain.disconnect(); } catch(e) {}

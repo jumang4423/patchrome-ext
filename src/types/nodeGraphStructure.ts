@@ -1,5 +1,5 @@
-export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'output';
-export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion';
 export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean';
 
 export interface BaseNode {
@@ -165,7 +165,6 @@ export interface LimiterNode extends BaseNode {
   type: 'limiter';
   data: {
     threshold: number;
-    mix: number;
   };
   deletable: true;
 }
@@ -178,6 +177,27 @@ export const LimiterParamDOM: ParamConfig[] = [
      max: 0,
      step: 0.1,
      valueType: 'decibels'
+  }
+];
+
+// distortion
+export interface DistortionNode extends BaseNode {
+  type: 'distortion';
+  data: {
+    drive: number;
+    mix: number;
+  };
+  deletable: true;
+}
+
+export const DistortionParamDOM: ParamConfig[] = [
+  {
+     label: 'Drive',
+     key: 'drive', 
+     min: 0,
+     max: 100,
+     step: 1,
+     valueType: 'percentage'
   },
   {
      label: 'Mix',
@@ -186,7 +206,7 @@ export const LimiterParamDOM: ParamConfig[] = [
      max: 100,
      step: 1,
      valueType: 'percentage'
-  },
+  }
 ];
 
 // output
@@ -199,7 +219,7 @@ export interface OutputNode extends BaseNode {
 
 export const OutputParamDOM: ParamConfig[] = [];
 
-export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | OutputNode;
 
 export interface Connection {
   id: string;

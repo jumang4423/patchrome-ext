@@ -84,8 +84,12 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         };
       } else if (node.data.type === 'limiter') {
         baseNode.params = { 
-          threshold: node.data.threshold ?? AUDIO_PARAM_DEFAULTS.limiter.threshold,
-          mix: node.data.mix ?? AUDIO_PARAM_DEFAULTS.limiter.mix
+          threshold: node.data.threshold ?? AUDIO_PARAM_DEFAULTS.limiter.threshold
+        };
+      } else if (node.data.type === 'distortion') {
+        baseNode.params = { 
+          drive: node.data.drive ?? AUDIO_PARAM_DEFAULTS.distortion.drive,
+          mix: node.data.mix ?? AUDIO_PARAM_DEFAULTS.distortion.mix
         };
       }
       
@@ -254,7 +258,20 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           data: {
             type: 'limiter' as const,
             threshold: node.params.threshold ?? AUDIO_PARAM_DEFAULTS.limiter.threshold,
-            mix: node.params.mix ?? AUDIO_PARAM_DEFAULTS.limiter.mix,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'distortion') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'distortion' as const,
+            drive: node.params.drive ?? AUDIO_PARAM_DEFAULTS.distortion.drive,
+            mix: node.params.mix ?? AUDIO_PARAM_DEFAULTS.distortion.mix,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -513,6 +530,35 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         data: { 
           type: 'limiter' as const,
           ...AUDIO_PARAM_DEFAULTS.limiter,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'distortion') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'distortion' as const,
+          ...AUDIO_PARAM_DEFAULTS.distortion,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);

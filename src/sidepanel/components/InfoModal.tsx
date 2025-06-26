@@ -35,11 +35,11 @@ const InfoModal: React.FC<InfoModalProps> = ({ open, onOpenChange }) => {
                     href="https://jumango.dev" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="hover:scale-105 transition-transform duration-200"
+                    className="hover:scale-125 transition-transform duration-200"
                 >
                     <img 
                         src={chrome.runtime.getURL('jumango.gif')}
-                        className="w-full h-128"
+                        className="w-full h-[164px]"
                         alt="jumang4423" 
                     />
                 </a>

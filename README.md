@@ -28,18 +28,30 @@ A Chrome extension that brings modular audio effects processing to your browser.
   - Control delay time, feedback, and mix
   - Sync to musical timing or create ambient textures
 
-- **Gain & Pan**
+- **Utility (Gain & Pan)**
   - Precise volume control (-60dB to +12dB)
   - Stereo panning for spatial positioning
+  - Phase reverse option for correcting phase issues
   - Essential for balancing your effect chain
 
+- **Limiter**
+  - Prevent audio clipping and distortion
+  - Adjustable threshold (-60dB to 0dB)
+  - Hard knee limiting with 20:1 ratio
+  - Fast attack (3ms) for transparent limiting
+
+- **Distortion**
+  - Add harmonic richness and grit
+  - Drive control (0-100%) for distortion intensity
+  - Wet/dry mix for parallel processing
+  - Soft clipping algorithm with 4x oversampling
 
 ### 🚀 Technical Highlights
 
 - Built on Web Audio API for low-latency processing
 - Works with all HTML5 audio/video elements
 - Special optimization for SoundCloud and Web Audio API sources
-- Wet/dry mixing on all effects for subtle blending
+- Wet/dry mixing on reverb, delay, and distortion effects
 - Persistent settings across browser sessions
 
 ## Installation
@@ -124,7 +136,7 @@ npm run dev      # Development build with watch
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 ### Areas for Contribution
-- New audio effects (filters, distortion, compression, etc.)
+- New audio effects (filters, compression, EQ, etc.)
 - UI/UX improvements
 - Performance optimizations
 - Browser compatibility enhancements
