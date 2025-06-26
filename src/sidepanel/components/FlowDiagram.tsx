@@ -10,11 +10,14 @@ import ReactFlow, {
   Background,
   MiniMap,
   BackgroundVariant,
+  NodeChange,
+  applyNodeChanges,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import ReverbEffectNode from './nodes/ReverbEffectNode';
 import AudioInputNode from './nodes/AudioInputNode';
 import AudioOutputNode from './nodes/AudioOutputNode';
+import MaxStyleEdge from './edges/MaxStyleEdge';
 
 const nodeTypes = {
   audioInput: AudioInputNode,
@@ -22,9 +25,13 @@ const nodeTypes = {
   audioOutput: AudioOutputNode,
 };
 
+const edgeTypes = {
+  maxStyle: MaxStyleEdge,
+};
+
 const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2' },
-  { id: 'e2-3', source: '2', target: '3' },
+  { id: 'e1-2', source: '1', target: '2', type: 'maxStyle' },
+  { id: 'e2-3', source: '2', target: '3', type: 'maxStyle' },
 ];
 
 interface FlowDiagramProps {
@@ -41,6 +48,7 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange,
       type: 'audioInput',
       data: { speedValue: speed, onSpeedChange: onSpeedChange },
       position: { x: 100, y: 150 },
+      deletable: false,
     },
     {
       id: '2',
@@ -53,14 +61,30 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange,
       type: 'audioOutput',
       data: {},
       position: { x: 100, y: 550 },
+      deletable: false,
     },
   ];
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // Custom handler to prevent deletion of audio input and output nodes
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      const filteredChanges = changes.filter((change) => {
+        // Prevent deletion of audio input (id: '1') and audio output (id: '3') nodes
+        if (change.type === 'remove' && (change.id === '1' || change.id === '3')) {
+          return false;
+        }
+        return true;
+      });
+      setNodes((nds) => applyNodeChanges(filteredChanges, nds));
+    },
+    [setNodes]
+  );
+
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge({ ...params, type: 'maxStyle' }, eds)),
     [setEdges]
   );
 
@@ -97,8 +121,10 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange,
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
+        proOptions={{ hideAttribution: true }}
       >
         <Controls />
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />

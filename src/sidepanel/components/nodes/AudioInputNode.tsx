@@ -17,21 +17,14 @@ const AudioInputNode = memo(({ data, isConnectable }: NodeProps<AudioInputNodeDa
       <div className="node-header">
         <div className="node-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="#ff6b6b"/>
+            <path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3z" fill="#ff6b6b"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" fill="#ff6b6b"/>
           </svg>
         </div>
         <h3>Audio Input</h3>
       </div>
       
       <div className="node-content">
-        <div className="node-status">
-          <span className="status-dot active"></span>
-          <span>Active</span>
-        </div>
-        
-        <div className="node-divider"></div>
-        
-        <div className="node-control-section">
           <label className="node-label">Speed ({data.speedValue.toFixed(2)}x)</label>
           <div className="node-slider-container nodrag">
             <input
@@ -41,10 +34,9 @@ const AudioInputNode = memo(({ data, isConnectable }: NodeProps<AudioInputNodeDa
               step="0.01"
               value={data.speedValue}
               onChange={handleChange}
-              className="node-slider speed-slider"
+              className="node-slider"
             />
           </div>
-        </div>
       </div>
       
       <Handle

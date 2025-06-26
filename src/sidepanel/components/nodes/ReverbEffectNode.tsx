@@ -28,7 +28,7 @@ const ReverbEffectNode = memo(({ data, isConnectable }: NodeProps<ReverbEffectNo
             <path d="M2 17h20v2H2zm1.15-4.05L4 11.47l.85 1.48 1.3-.75-.85-1.48H7v-1.5H5.3l.85-1.48L4.85 7 4 8.47 3.15 7l-1.3.75.85 1.48H1v1.5h1.7l-.85 1.48 1.3.75zm6.7-.75l1.48.85 1.48-.85-.85-1.48H14v-1.5h-2.05l.85-1.48L11.5 7 10 8.5 8.5 7l-1.3.75.85 1.48H6v1.5h2.05l-.85 1.48zm8 0l1.48.85 1.48-.85-.85-1.48H22v-1.5h-2.05l.85-1.48L19.5 7 18 8.5 16.5 7l-1.3.75.85 1.48H14v1.5h2.05l-.85 1.48z" fill="#4ecdc4"/>
           </svg>
         </div>
-        <h3>Reverb Effect</h3>
+        <h3>Reverb</h3>
       </div>
       
       <div className="node-content">

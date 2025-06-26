@@ -118,6 +118,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: #ffffff;
   border: 1px solid #e9ecef;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .react-flow__controls-button {
@@ -155,9 +157,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 4px 8px;
   border-bottom: 1px solid #f1f3f5;
-  border-radius: 16px 16px 0 0;
+  border-radius: 16px;
 }
 
 .node-header h3 {
@@ -180,7 +182,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .node-content {
-  padding: 16px;
+  padding: 14px;
 }
 
 .node-slider-container {
@@ -195,7 +197,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   height: 6px;
   background: #e9ecef;
   outline: none;
-  border-radius: 8px;
+  border-radius: 50px !important;
   cursor: pointer;
   -webkit-appearance: none;
   transition: background 0.3s ease;
@@ -225,35 +227,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-color: #adb5bd;
 }
 
-/* Specific node styles */
-.speed-slider::-webkit-slider-thumb {
-  background: #ffffff;
-  border: 2px solid #dee2e6;
-  transition: all 0.3s ease;
-}
-
-.speed-slider::-webkit-slider-thumb:hover {
-  border: 2px solid #adb5bd;
-  background: #ffffff;
-  transform: scale(1.15);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-}
-
-.reverb-effect-node .node-slider::-webkit-slider-thumb:hover {
-  border-color: #6c757d;
-  box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
-}
-
 .reverb-effect-node .node-header {
   background: linear-gradient(135deg, #fff5f5 0%, #f8f9fa 100%);
 }
 
 .audio-input-node .node-header {
-  background: linear-gradient(135deg, #f3f4f6 0%, #f8f9fa 100%);
+  background: linear-gradient(135deg, #fff5f5 0%, #f8f9fa 100%);
 }
 
 .audio-output-node .node-header {
-  background: linear-gradient(135deg, #f3f4f6 0%, #f8f9fa 100%);
+  background: linear-gradient(135deg, #fff5f5 0%, #f8f9fa 100%);
 }
 
 /* Node status styling */
@@ -300,6 +283,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .react-flow__edge-path:hover {
   stroke: #adb5bd;
+}
+
+/* Bring edges to front */
+.react-flow__edges {
+  z-index: 1000 !important;
 }
 
 /* Additional node styling */
