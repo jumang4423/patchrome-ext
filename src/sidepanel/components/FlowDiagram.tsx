@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -19,6 +19,7 @@ import 'reactflow/dist/style.css';
 import UnifiedAudioNode from './nodes/UnifiedAudioNode';
 import MaxStyleEdge from './edges/MaxStyleEdge';
 import AddEffectButton from './AddEffectButton';
+import { AudioGraphData } from '../../shared/types';
 
 const nodeTypes = {
   unifiedAudio: UnifiedAudioNode,
@@ -36,22 +37,30 @@ const initialEdges: Edge[] = [
 interface FlowDiagramProps {
   speed: number;
   reverb: number;
+  audioGraph: AudioGraphData;
   onSpeedChange: (value: number) => void;
   onReverbChange: (value: number) => void;
+  onGraphChange: (graph: AudioGraphData) => void;
 }
 
-const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedChange, onReverbChange }) => {
+const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGraph, onSpeedChange, onReverbChange, onGraphChange }) => {
   const [nodeIdCounter, setNodeIdCounter] = React.useState(4);
   const { getViewport } = useReactFlow();
   const [nodes, setNodes] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+  const [needsSync, setNeedsSync] = React.useState(false);
   
   const handleRemoveNode = useCallback((nodeId: string) => {
     setNodes((nds) => {
       const filteredNodes = nds.filter((node) => node.id !== nodeId);
       return filteredNodes;
     });
-    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+    setEdges((eds) => {
+      const newEdges = eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+      return newEdges;
+    });
+    setNeedsSync(true);
   }, [setNodes, setEdges]);
 
   const initialNodes: Node[] = [
@@ -99,10 +108,110 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
     },
   ];
 
-  // Initialize nodes with effect
+  // Convert audioGraph to ReactFlow nodes
+  const convertGraphToNodes = useCallback((graph: AudioGraphData): Node[] => {
+    return graph.nodes.map(node => {
+      const baseNode: Node = {
+        id: node.id,
+        type: 'unifiedAudio',
+        position: { x: 100, y: 150 + (parseInt(node.id) - 1) * 200 },
+        deletable: node.type !== 'input' && node.type !== 'output',
+        data: {},
+      };
+
+      if (node.type === 'input') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'input' as const,
+            speed: node.params.speed || 1.0,
+            deletable: false,
+            onChange: (key: string, value: number) => {
+              if (key === 'speed') {
+                onSpeedChange(value);
+              }
+            }
+          }
+        };
+      } else if (node.type === 'reverb') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'reverb' as const,
+            mix: node.params.mix || 0,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              if (key === 'mix') {
+                onReverbChange(value);
+              }
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else {
+        return {
+          ...baseNode,
+          data: {
+            type: 'output' as const,
+            deletable: false,
+          }
+        };
+      }
+    });
+  }, [onSpeedChange, onReverbChange, handleRemoveNode]);
+
+  // Initialize from audioGraph
   React.useEffect(() => {
-    setNodes(initialNodes);
-  }, []); // Run only once on mount
+    if (!isInitialized && audioGraph) {
+      const flowNodes = convertGraphToNodes(audioGraph);
+      const flowEdges = audioGraph.edges.map(edge => ({
+        ...edge,
+        type: 'maxStyle'
+      }));
+      
+      setNodes(flowNodes);
+      setEdges(flowEdges);
+      setIsInitialized(true);
+      
+      // Set node counter based on existing nodes
+      const maxId = Math.max(...audioGraph.nodes.map(n => parseInt(n.id)));
+      setNodeIdCounter(maxId + 1);
+    }
+  }, [audioGraph, isInitialized, setNodes, setEdges, convertGraphToNodes]);
+
+  // Sync ReactFlow state to audioGraph when needed
+  React.useEffect(() => {
+    if (needsSync && nodes.length > 0) {
+      const nodeData = nodes.map(node => {
+        const baseNode = {
+          id: node.id,
+          type: node.data.type as 'input' | 'reverb' | 'output',
+          params: {} as Record<string, number>
+        };
+        
+        if (node.data.type === 'input') {
+          baseNode.params = { speed: node.data.speed || 1.0 };
+        } else if (node.data.type === 'reverb') {
+          baseNode.params = { mix: node.data.mix || 0 };
+        }
+        
+        return baseNode;
+      });
+      
+      const edgeData = edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target
+      }));
+      
+      onGraphChange({
+        nodes: nodeData,
+        edges: edgeData
+      });
+      
+      setNeedsSync(false);
+    }
+  }, [needsSync, nodes, edges, onGraphChange]);
 
   // Custom handler to prevent deletion of audio input and output nodes
   const onNodesChange = useCallback(
@@ -122,6 +231,12 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
       
       setNodes((nds) => {
         const updatedNodes = applyNodeChanges(filteredChanges, nds);
+        
+        // Sync graph if there are structural changes
+        if (hasNonPositionChanges) {
+          setNeedsSync(true);
+        }
+        
         return updatedNodes;
       });
     },
@@ -129,7 +244,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
   );
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge({ ...params, type: 'maxStyle' }, eds)),
+    (params: Connection) => {
+      setEdges((eds) => {
+        const newEdges = addEdge({ ...params, type: 'maxStyle' }, eds);
+        setNeedsSync(true);
+        return newEdges;
+      });
+    },
     [setEdges]
   );
 
@@ -160,6 +281,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, onSpeedCh
       };
       setNodes((nds) => {
         const updatedNodes = [...nds, newNode];
+        setNeedsSync(true);
         return updatedNodes;
       });
       setNodeIdCounter((prev) => prev + 1);

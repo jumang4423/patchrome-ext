@@ -2,17 +2,27 @@
 (function() {
   'use strict';
   
-  
   let settings = {
     enabled: true,
     speed: 1.0,
-    reverb: 0
+    reverb: 0,
+    audioGraph: {
+      nodes: [
+        { id: '1', type: 'input', params: { speed: 1.0 } },
+        { id: '2', type: 'reverb', params: { mix: 0 } },
+        { id: '3', type: 'output', params: {} }
+      ],
+      edges: [
+        { id: 'e1-2', source: '1', target: '2' },
+        { id: 'e2-3', source: '2', target: '3' }
+      ]
+    }
   };
   
   // Keep track of processed elements
   const processedElements = new WeakSet();
   const audioContexts = new WeakMap();
-  const audioNodes = new WeakMap();
+  const audioGraphs = new WeakMap();
   
   // Create reverb impulse response
   function createReverbImpulse(audioContext, duration = 0.6, decay = 3.5) {
@@ -57,9 +67,179 @@
     return impulse;
   }
   
+  // Build audio graph from node graph
+  function buildAudioGraph(audioContext, source, nodeGraph, customDestination) {
+    const nodes = new Map();
+    const connections = [];
+    
+    // Create audio nodes based on graph nodes
+    nodeGraph.nodes.forEach(node => {
+      if (node.type === 'input') {
+        nodes.set(node.id, {
+          type: 'input',
+          audioNode: source,
+          params: node.params
+        });
+      } else if (node.type === 'reverb') {
+        // Create reverb effect chain
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        const convolver = audioContext.createConvolver();
+        const merger = audioContext.createGain();
+        
+        convolver.buffer = createReverbImpulse(audioContext);
+        
+        // Set up wet/dry mix
+        const wetAmount = (node.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        dryGain.gain.value = dryAmount;
+        wetGain.gain.value = wetAmount;
+        
+        nodes.set(node.id, {
+          type: 'reverb',
+          input: merger,
+          output: merger,
+          dryGain,
+          wetGain,
+          convolver,
+          merger,
+          params: node.params
+        });
+        
+        // Store internal connections
+        connections.push({ from: convolver, to: wetGain });
+        connections.push({ from: wetGain, to: merger });
+        connections.push({ from: dryGain, to: merger });
+      } else if (node.type === 'output') {
+        // Add a master gain to control overall volume
+        const masterGain = audioContext.createGain();
+        masterGain.gain.value = 0.8; // Reduce volume to 80% to prevent clipping
+        masterGain.connect(customDestination || audioContext.destination);
+        
+        nodes.set(node.id, {
+          type: 'output',
+          audioNode: masterGain,
+          masterGain: masterGain
+        });
+      }
+    });
+    
+    // Connect nodes based on edges
+    nodeGraph.edges.forEach(edge => {
+      const sourceNode = nodes.get(edge.source);
+      const targetNode = nodes.get(edge.target);
+      
+      if (sourceNode && targetNode) {
+        if (sourceNode.type === 'input') {
+          if (targetNode.type === 'reverb') {
+            // Connect to both dry and wet paths
+            sourceNode.audioNode.connect(targetNode.dryGain);
+            sourceNode.audioNode.connect(targetNode.convolver);
+          } else if (targetNode.type === 'output') {
+            sourceNode.audioNode.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'reverb') {
+          if (targetNode.type === 'reverb') {
+            // Connect reverb output to next reverb input
+            sourceNode.output.connect(targetNode.dryGain);
+            sourceNode.output.connect(targetNode.convolver);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        }
+      }
+    });
+    
+    // Apply all internal connections
+    connections.forEach(conn => {
+      conn.from.connect(conn.to);
+    });
+    
+    return nodes;
+  }
+  
+  // Update audio graph parameters
+  function updateAudioGraphParams(element) {
+    const graph = audioGraphs.get(element);
+    if (!graph) return;
+    
+    graph.forEach((node, nodeId) => {
+      const graphNode = settings.audioGraph.nodes.find(n => n.id === nodeId);
+      if (!graphNode) return;
+      
+      if (node.type === 'reverb' && node.wetGain && node.dryGain) {
+        const wetAmount = (graphNode.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        node.wetGain.gain.value = wetAmount;
+        node.dryGain.gain.value = dryAmount;
+      }
+    });
+  }
+  
+  // Get current speed from settings
+  function getCurrentSpeed() {
+    const inputNode = settings.audioGraph.nodes.find(n => n.type === 'input');
+    return inputNode?.params.speed || settings.speed;
+  }
+  
+  // Disconnect all nodes in the graph
+  function disconnectAudioGraph(element) {
+    const graph = audioGraphs.get(element);
+    if (!graph) return;
+    
+    graph.forEach(node => {
+      if (node.audioNode && node.audioNode.disconnect) {
+        try { node.audioNode.disconnect(); } catch(e) {}
+      }
+      if (node.dryGain) {
+        try { node.dryGain.disconnect(); } catch(e) {}
+      }
+      if (node.wetGain) {
+        try { node.wetGain.disconnect(); } catch(e) {}
+      }
+      if (node.convolver) {
+        try { node.convolver.disconnect(); } catch(e) {}
+      }
+      if (node.merger) {
+        try { node.merger.disconnect(); } catch(e) {}
+      }
+      if (node.masterGain) {
+        try { node.masterGain.disconnect(); } catch(e) {}
+      }
+    });
+  }
+  
   // Setup audio processing for media element
-  function setupAudioProcessing(element) {
-    if (audioContexts.has(element)) return;
+  function setupAudioProcessing(element, forceRebuild = false) {
+    const hasExistingContext = audioContexts.has(element);
+    
+    if (hasExistingContext && !forceRebuild) {
+      // Only update parameters, don't rebuild
+      updateAudioGraphParams(element);
+      return;
+    }
+    
+    if (hasExistingContext && forceRebuild) {
+      // Disconnect existing graph before rebuilding
+      disconnectAudioGraph(element);
+      
+      const audioContext = audioContexts.get(element);
+      // Get the existing source (we can't create a new one)
+      const existingGraph = audioGraphs.get(element);
+      let source = null;
+      existingGraph.forEach(node => {
+        if (node.type === 'input' && node.audioNode) {
+          source = node.audioNode;
+        }
+      });
+      
+      if (source) {
+        // Rebuild audio graph with existing source
+        const audioNodes = buildAudioGraph(audioContext, source, settings.audioGraph);
+        audioGraphs.set(element, audioNodes);
+      }
+      return;
+    }
     
     // Skip if on SoundCloud - handled separately
     if (window.location.hostname.includes('soundcloud.com')) return;
@@ -68,71 +248,24 @@
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContext.createMediaElementSource(element);
       
-      // Create nodes
-      const dryGain = audioContext.createGain();
-      const wetGain = audioContext.createGain();
-      const convolver = audioContext.createConvolver();
-      const merger = audioContext.createGain();
-      
-      // Set up convolver (reverb)
-      convolver.buffer = createReverbImpulse(audioContext);
-      
-      // Connect the graph
-      // Dry path: source -> dryGain -> merger -> destination
-      source.connect(dryGain);
-      dryGain.connect(merger);
-      
-      // Wet path: source -> convolver -> wetGain -> merger -> destination
-      source.connect(convolver);
-      convolver.connect(wetGain);
-      wetGain.connect(merger);
-      
-      merger.connect(audioContext.destination);
+      // Build audio graph
+      const audioNodes = buildAudioGraph(audioContext, source, settings.audioGraph);
       
       // Store references
       audioContexts.set(element, audioContext);
-      audioNodes.set(element, {
-        source,
-        dryGain,
-        wetGain,
-        convolver,
-        merger
-      });
-      
-      // Apply initial reverb settings
-      updateReverbMix(element);
+      audioGraphs.set(element, audioNodes);
       
     } catch (e) {
       console.error('Patchrome: Failed to setup audio processing', e);
     }
   }
   
-  // Update reverb mix
-  function updateReverbMix(element) {
-    const nodes = audioNodes.get(element);
-    if (!nodes) return;
-    
-    const wetAmount = settings.reverb / 100;
-    const dryAmount = 1 - wetAmount;
-    
-    nodes.dryGain.gain.value = dryAmount;
-    nodes.wetGain.gain.value = wetAmount;
-  }
-  
   // Update a single media element
   function updateMediaElement(element) {
     if (!element) return;
-
     
-    // Setup audio processing if reverb is enabled
-    if (settings.reverb > 0 && !audioContexts.has(element)) {
-      setupAudioProcessing(element);
-    }
-    
-    // Update reverb mix
-    if (audioContexts.has(element)) {
-      updateReverbMix(element);
-    }
+    // Setup/update audio processing
+    setupAudioProcessing(element, false);
     
     // Add property descriptor to catch changes
     if (!processedElements.has(element)) {
@@ -148,9 +281,10 @@
           return originalDescriptor.get.call(this);
         },
         set: function(value) {
-          // Always use our speed setting
-          if (isFinite(settings.speed) && settings.speed > 0) {
-            originalDescriptor.set.call(this, settings.speed);
+          // Always use our speed setting (get it fresh each time)
+          const currentSpeed = getCurrentSpeed();
+          if (isFinite(currentSpeed) && currentSpeed > 0) {
+            originalDescriptor.set.call(this, currentSpeed);
             // Apply pitch preservation setting after each playback rate change
             applyPitchSettings(this);
           } else if (isFinite(value) && value > 0) {
@@ -162,13 +296,13 @@
       });
     }
     
-    if (isFinite(settings.speed) && settings.speed > 0) {
+    const currentSpeed = getCurrentSpeed();
+    if (isFinite(currentSpeed) && currentSpeed > 0) {
       // Set playback rate with validation
-      element.playbackRate = settings.speed;
+      element.playbackRate = currentSpeed;
       
       // Apply pitch settings
       applyPitchSettings(element);
-      
     }
   }
   
@@ -203,6 +337,8 @@
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'PATCHROME_SETTINGS') {
       const newSettings = event.data.settings;
+      let needsRebuild = false;
+      
       // Validate settings before applying
       if (newSettings) {
         if (typeof newSettings.speed === 'number' && isFinite(newSettings.speed) && newSettings.speed > 0) {
@@ -211,9 +347,25 @@
         if (typeof newSettings.reverb === 'number' && isFinite(newSettings.reverb) && newSettings.reverb >= 0 && newSettings.reverb <= 100) {
           settings.reverb = newSettings.reverb;
         }
+        if (newSettings.audioGraph) {
+          // Check if edges have changed
+          const oldEdges = JSON.stringify(settings.audioGraph.edges);
+          const newEdges = JSON.stringify(newSettings.audioGraph.edges);
+          if (oldEdges !== newEdges) {
+            needsRebuild = true;
+          }
+          settings.audioGraph = newSettings.audioGraph;
+        }
         settings.enabled = newSettings.enabled !== false;
       }
-      updateAllMedia();
+      
+      if (needsRebuild) {
+        // Force rebuild all audio graphs
+        const elements = document.querySelectorAll('audio, video');
+        elements.forEach(element => setupAudioProcessing(element, true));
+      } else {
+        updateAllMedia();
+      }
     }
   });
   
@@ -255,6 +407,19 @@
     const contexts = new WeakMap();
     const soundcloudSources = new WeakMap();
     const sourceConnections = new WeakMap();
+    let needsSoundCloudRebuild = false;
+    
+    // Watch for edge changes that require rebuild
+    const originalMessageHandler = window.addEventListener;
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'PATCHROME_SETTINGS') {
+        const newSettings = event.data.settings;
+        if (newSettings && newSettings.audioGraph) {
+          // Mark for rebuild on next connect
+          needsSoundCloudRebuild = true;
+        }
+      }
+    });
     
     window.AudioContext = window.webkitAudioContext = function(...args) {
       const ctx = new OriginalAudioContext(...args);
@@ -268,7 +433,7 @@
             oldProxy.disconnect();
           }
           soundcloudSources.delete(mediaElement);
-          audioNodes.delete(mediaElement);
+          audioGraphs.delete(mediaElement);
           audioContexts.delete(mediaElement);
         }
         
@@ -280,10 +445,16 @@
             // Clean up any existing connection
             const existingConnection = sourceConnections.get(source);
             if (existingConnection) {
-              existingConnection.nodes.dryGain.disconnect();
-              existingConnection.nodes.wetGain.disconnect();
-              existingConnection.nodes.convolver.disconnect();
-              existingConnection.nodes.merger.disconnect();
+              // Disconnect all nodes in the graph
+              existingConnection.nodes.forEach(node => {
+                if (node.audioNode && node.audioNode.disconnect) {
+                  node.audioNode.disconnect();
+                }
+                if (node.dryGain) node.dryGain.disconnect();
+                if (node.wetGain) node.wetGain.disconnect();
+                if (node.convolver) node.convolver.disconnect();
+                if (node.merger) node.merger.disconnect();
+              });
               source.disconnect();
               if (existingConnection.interval) {
                 clearInterval(existingConnection.interval);
@@ -294,52 +465,31 @@
             contexts.set(mediaElement, ctx);
             audioContexts.set(mediaElement, ctx);
             
-            // Create reverb nodes for SoundCloud
-            const dryGain = ctx.createGain();
-            const wetGain = ctx.createGain();
-            const convolver = ctx.createConvolver();
-            const merger = ctx.createGain();
+            // Disconnect existing graph if any
+            disconnectAudioGraph(mediaElement);
             
-            // Set up convolver (reverb)
-            convolver.buffer = createReverbImpulse(ctx);
-            
-            // Connect the graph
-            // Dry path: source -> dryGain -> merger -> destination
-            source.connect(dryGain);
-            dryGain.connect(merger);
-            
-            // Wet path: source -> convolver -> wetGain -> merger -> destination
-            source.connect(convolver);
-            convolver.connect(wetGain);
-            wetGain.connect(merger);
-            
-            // Connect to the destination that SoundCloud intended
-            merger.connect(destination);
-            
-            const nodes = {
-              source,
-              dryGain,
-              wetGain,
-              convolver,
-              merger
-            };
-            
-            // Store nodes
-            audioNodes.set(mediaElement, nodes);
-            
-            // Apply initial reverb settings
-            updateReverbMix(mediaElement);
+            // Build dynamic audio graph with custom destination
+            const audioNodes = buildAudioGraph(ctx, source, settings.audioGraph, destination);
+            audioGraphs.set(mediaElement, audioNodes);
             
             // Ensure pitch settings are applied
             applyPitchSettings(mediaElement);
             
             // Monitor changes
             const checkPitch = () => {
-              if (mediaElement.playbackRate !== settings.speed) {
-                mediaElement.playbackRate = settings.speed;
+              const currentSpeed = getCurrentSpeed();
+              if (mediaElement.playbackRate !== currentSpeed) {
+                mediaElement.playbackRate = currentSpeed;
               }
               applyPitchSettings(mediaElement);
-              updateReverbMix(mediaElement);
+              updateAudioGraphParams(mediaElement);
+              
+              // Check if we need to rebuild the graph
+              if (needsSoundCloudRebuild) {
+                needsSoundCloudRebuild = false;
+                // Trigger reconnect by calling connect again
+                this.connect(destination);
+              }
             };
             
             // Check more frequently for SoundCloud
@@ -347,7 +497,7 @@
             
             // Store connection info
             sourceConnections.set(source, {
-              nodes,
+              nodes: audioNodes,
               destination,
               interval
             });
@@ -355,10 +505,15 @@
           disconnect: function() {
             const connection = sourceConnections.get(source);
             if (connection) {
-              connection.nodes.dryGain.disconnect();
-              connection.nodes.wetGain.disconnect();
-              connection.nodes.convolver.disconnect();
-              connection.nodes.merger.disconnect();
+              connection.nodes.forEach(node => {
+                if (node.audioNode && node.audioNode.disconnect) {
+                  node.audioNode.disconnect();
+                }
+                if (node.dryGain) node.dryGain.disconnect();
+                if (node.wetGain) node.wetGain.disconnect();
+                if (node.convolver) node.convolver.disconnect();
+                if (node.merger) node.merger.disconnect();
+              });
               if (connection.interval) {
                 clearInterval(connection.interval);
               }
