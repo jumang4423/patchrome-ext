@@ -74,32 +74,30 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
               </div>
             </button>
             <button
-              className="effect-dropdown-item disabled"
-              disabled
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('delay')}
             >
               <div className="effect-item-content">
-                <div className="effect-item-icon">
+                <div className="effect-item-icon delay">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M8 2V14M2 8H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
                 <span>Delay</span>
               </div>
-              <span className="effect-item-badge">Soon</span>
             </button>
             <button
-              className="effect-dropdown-item disabled"
-              disabled
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('gain')}
             >
               <div className="effect-item-content">
-                <div className="effect-item-icon">
+                <div className="effect-item-icon gain">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 8L4 6V10L2 8ZM4 8H12M12 6V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 12V4M2 8H6M10 12V4M10 8H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <span>Compressor</span>
+                <span>Gain</span>
               </div>
-              <span className="effect-item-badge">Soon</span>
             </button>
           </div>
         </div>

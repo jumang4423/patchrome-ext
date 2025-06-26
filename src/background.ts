@@ -5,12 +5,10 @@ let currentSettings: Settings = {
   audioGraph: {
     nodes: [
       { id: '1', type: 'input', params: { speed: 1.0 } },
-      { id: '2', type: 'reverb', params: { mix: 0 } },
       { id: '3', type: 'output', params: {} }
     ],
     edges: [
-      { id: 'e1-2', source: '1', target: '2' },
-      { id: 'e2-3', source: '2', target: '3' }
+      { id: 'e1-3', source: '1', target: '3' },
     ]
   }
 };
@@ -33,10 +31,13 @@ chrome.action.onClicked.addListener((tab) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log(`[Background] Received message:`, request);
+  
   if (request.type === 'GET_SETTINGS') {
     sendResponse(currentSettings);
     return true;
   } else if (request.type === 'UPDATE_SETTINGS') {
+    console.log(`[Background] UPDATE_SETTINGS received with settings:`, request.settings);
     currentSettings = request.settings;
     chrome.storage.local.set({ settings: currentSettings });
     broadcastSettings();
@@ -46,6 +47,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function broadcastSettings() {
+  console.log(`[Background] Broadcasting settings to all tabs:`, currentSettings);
   chrome.tabs.query({}, (tabs) => {
     tabs.forEach(tab => {
       if (tab.id) {

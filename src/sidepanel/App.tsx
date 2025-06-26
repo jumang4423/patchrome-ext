@@ -9,7 +9,7 @@ const App: React.FC = () => {
     audioGraph: {
       nodes: [
         { id: '1', type: 'input', params: { speed: 1.0 } },
-        { id: '2', type: 'reverb', params: { mix: 0 } },
+        { id: '2', type: 'reverb', params: { mix: 0, decay: 1000, size: 50 } },
         { id: '3', type: 'output', params: {} }
       ],
       edges: [
@@ -32,11 +32,15 @@ const App: React.FC = () => {
   }, []);
 
   const handleGraphChange = useCallback((audioGraph: AudioGraphData) => {
+    console.log(`[App] handleGraphChange called with audioGraph:`, audioGraph);
+    
     setSettings(prevSettings => {
       const newSettings = {
         ...prevSettings,
         audioGraph
       };
+      
+      console.log(`[App] Sending UPDATE_SETTINGS to background with settings:`, newSettings);
       
       // Save settings after state update
       chrome.runtime.sendMessage({
@@ -45,6 +49,8 @@ const App: React.FC = () => {
       }, (response) => {
         if (chrome.runtime.lastError) {
           console.error('Error saving settings:', chrome.runtime.lastError.message);
+        } else {
+          console.log(`[App] UPDATE_SETTINGS response:`, response);
         }
       });
       

@@ -1,6 +1,6 @@
-export type NodeType = 'input' | 'reverb' | 'output';
-export type EffectNodeType = 'reverb';
-export type ValueType = 'percentage' | 'number';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'gain' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'gain';
+export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan';
 
 export interface BaseNode {
   id: string;
@@ -35,6 +35,8 @@ export interface ReverbNode extends BaseNode {
   type: 'reverb';
   data: {
     mix: number;
+    decay: number;
+    size: number;
   };
   deletable: true;
 }
@@ -48,6 +50,89 @@ export const ReverbParamDOM = [
      step: 1,
      valueType: 'percentage'
   },
+  {
+     label: 'Decay',
+     key: 'decay', 
+     min: 100,
+     max: 2000,
+     step: 10,
+     valueType: 'milliseconds'
+  },
+  {
+     label: 'Size',
+     key: 'size', 
+     min: 0,
+     max: 100,
+     step: 1,
+     valueType: 'percentage'
+  },
+];
+
+// delay
+export interface DelayNode extends BaseNode {
+  type: 'delay';
+  data: {
+    mix: number;
+    delayTime: number;
+    feedback: number;
+  };
+  deletable: true;
+}
+
+export const DelayParamDOM = [
+  {
+     label: 'Mix',
+     key: 'mix', 
+     min: 0,
+     max: 100,
+     step: 1,
+     valueType: 'percentage'
+  },
+  {
+     label: 'Delay Time',
+     key: 'delayTime', 
+     min: 0,
+     max: 1000,
+     step: 10,
+     valueType: 'milliseconds'
+  },
+  {
+     label: 'Feedback',
+     key: 'feedback', 
+     min: 0,
+     max: 100,
+     step: 1,
+     valueType: 'percentage'
+  },
+];
+
+// gain
+export interface GainNode extends BaseNode {
+  type: 'gain';
+  data: {
+    volume: number;
+    pan: number;
+  };
+  deletable: true;
+}
+
+export const GainParamDOM = [
+  {
+     label: 'Volume',
+     key: 'volume', 
+     min: -60,
+     max: 12,
+     step: 0.1,
+     valueType: 'decibels'
+  },
+  {
+     label: 'Pan',
+     key: 'pan', 
+     min: -100,
+     max: 100,
+     step: 1,
+     valueType: 'pan'
+  },
 ];
 
 // output
@@ -60,7 +145,7 @@ export interface OutputNode extends BaseNode {
 
 export const OutputParamDOM = [];
 
-export type AudioNode = InputNode | ReverbNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | GainNode | OutputNode;
 
 export interface Connection {
   id: string;

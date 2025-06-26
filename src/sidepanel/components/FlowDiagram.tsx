@@ -56,14 +56,29 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     const nodeData = nodesList.map(node => {
       const baseNode = {
         id: node.id,
-        type: node.data.type as 'input' | 'reverb' | 'output',
+        type: node.data.type as 'input' | 'reverb' | 'delay' | 'gain' | 'output',
         params: {} as Record<string, number>
       };
       
       if (node.data.type === 'input') {
         baseNode.params = { speed: node.data.speed || 1.0 };
       } else if (node.data.type === 'reverb') {
-        baseNode.params = { mix: node.data.mix || 0 };
+        baseNode.params = { 
+          mix: node.data.mix || 0,
+          decay: node.data.decay !== undefined ? node.data.decay : 1000,
+          size: node.data.size !== undefined ? node.data.size : 50
+        };
+      } else if (node.data.type === 'delay') {
+        baseNode.params = { 
+          mix: node.data.mix || 0,
+          delayTime: node.data.delayTime !== undefined ? node.data.delayTime : 500,
+          feedback: node.data.feedback !== undefined ? node.data.feedback : 50
+        };
+      } else if (node.data.type === 'gain') {
+        baseNode.params = { 
+          volume: node.data.volume !== undefined ? node.data.volume : 0,
+          pan: node.data.pan !== undefined ? node.data.pan : 0
+        };
       }
       
       return baseNode;
@@ -91,11 +106,14 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     localStorage.setItem('patchrome-flow-positions', JSON.stringify(positions));
     
     // Also update parent component
+    console.log(`[FlowDiagram] Saving to localStorage and updating parent - Graph:`, newGraph);
     onGraphChange(newGraph);
   }, [onGraphChange]);
 
   // Handler for node value changes
   const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number) => {
+    console.log(`[FlowDiagram] handleNodeValueChange - NodeId: ${nodeId}, Key: ${key}, Value: ${value}`);
+    
     setNodes((currentNodes) => {
       const updatedNodes = currentNodes.map(node => 
         node.id === nodeId 
@@ -183,6 +201,37 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           data: {
             type: 'reverb' as const,
             mix: node.params.mix || 0,
+            decay: node.params.decay !== undefined ? node.params.decay : 1000,
+            size: node.params.size !== undefined ? node.params.size : 50,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'delay') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'delay' as const,
+            mix: node.params.mix || 0,
+            delayTime: node.params.delayTime !== undefined ? node.params.delayTime : 500,
+            feedback: node.params.feedback !== undefined ? node.params.feedback : 50,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'gain') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'gain' as const,
+            volume: node.params.volume !== undefined ? node.params.volume : 0,
+            pan: node.params.pan !== undefined ? node.params.pan : 0,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -354,6 +403,69 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         data: { 
           type: 'reverb' as const,
           mix: 0,
+          decay: 1000,
+          size: 50,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'delay') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'delay' as const,
+          mix: 0,
+          delayTime: 500,
+          feedback: 50,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'gain') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'gain' as const,
+          volume: 0,
+          pan: 0,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);

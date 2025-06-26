@@ -7,12 +7,10 @@ let currentSettings: Settings = {
   audioGraph: {
     nodes: [
       { id: '1', type: 'input', params: { speed: 1.0 } },
-      { id: '2', type: 'reverb', params: { mix: 0 } },
       { id: '3', type: 'output', params: {} }
     ],
     edges: [
-      { id: 'e1-2', source: '1', target: '2' },
-      { id: 'e2-3', source: '2', target: '3' }
+      { id: 'e1-3', source: '1', target: '3' },
     ]
   }
 };
@@ -24,6 +22,7 @@ function injectScript() {
 }
 
 function updatePageSettings() {
+  console.log(`[Content] Sending settings to inject.js:`, currentSettings);
   window.postMessage({
     type: 'PATCHROME_SETTINGS',
     settings: currentSettings
@@ -39,6 +38,7 @@ chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (response) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'SETTINGS_UPDATED') {
+    console.log(`[Content] Received SETTINGS_UPDATED from background:`, request.settings);
     currentSettings = request.settings;
     updatePageSettings();
   }

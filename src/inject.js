@@ -9,12 +9,10 @@
     audioGraph: {
       nodes: [
         { id: '1', type: 'input', params: { speed: 1.0 } },
-        { id: '2', type: 'reverb', params: { mix: 0 } },
         { id: '3', type: 'output', params: {} }
       ],
       edges: [
-        { id: 'e1-2', source: '1', target: '2' },
-        { id: 'e2-3', source: '2', target: '3' }
+        { id: 'e1-3', source: '1', target: '3' },
       ]
     }
   };
@@ -24,8 +22,14 @@
   const audioContexts = new WeakMap();
   const audioGraphs = new WeakMap();
   
-  // Create reverb impulse response
-  function createReverbImpulse(audioContext, duration = 0.6, decay = 3.5) {
+  // Create reverb impulse response with size and decay parameters
+  function createReverbImpulse(audioContext, size = 50, decay = 1000) {
+    // Size affects the duration (0-100% maps to 0.1-2.0 seconds)
+    const duration = 0.1 + (size / 100) * 1.9;
+    // Decay in milliseconds affects the decay rate
+    // Convert decay time to a decay factor (higher decay time = slower decay)
+    const decayRate = Math.max(1.0, 10.0 - (decay / 1000) * 4.0);
+    
     const length = audioContext.sampleRate * duration;
     const impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
     
@@ -33,11 +37,13 @@
       const channelData = impulse.getChannelData(channel);
       
       // Add early reflections for live house character
+      // Scale early reflections based on size
+      const sizeMultiplier = 0.5 + (size / 100) * 0.5;
       const earlyReflections = [
-        { time: 0.015, gain: 0.5 },
-        { time: 0.025, gain: 0.3 },
-        { time: 0.035, gain: 0.2 },
-        { time: 0.045, gain: 0.15 }
+        { time: 0.015 * sizeMultiplier, gain: 0.5 },
+        { time: 0.025 * sizeMultiplier, gain: 0.3 },
+        { time: 0.035 * sizeMultiplier, gain: 0.2 },
+        { time: 0.045 * sizeMultiplier, gain: 0.15 }
       ];
       
       for (let i = 0; i < length; i++) {
@@ -52,8 +58,8 @@
           }
         }
         
-        // Add diffuse reverb tail with faster decay
-        sample += (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay) * 0.5;
+        // Add diffuse reverb tail with adjustable decay
+        sample += (Math.random() * 2 - 1) * Math.pow(1 - i / length, decayRate) * 0.5;
         
         // Apply slight stereo spread
         if (channel === 1) {
@@ -82,12 +88,16 @@
         });
       } else if (node.type === 'reverb') {
         // Create reverb effect chain
+        const inputGain = audioContext.createGain(); // Add input gain for easier reconnection
         const dryGain = audioContext.createGain();
         const wetGain = audioContext.createGain();
         const convolver = audioContext.createConvolver();
         const merger = audioContext.createGain();
         
-        convolver.buffer = createReverbImpulse(audioContext);
+        // Create impulse with size and decay parameters
+        const size = node.params.size !== undefined ? node.params.size : 50;
+        const decay = node.params.decay !== undefined ? node.params.decay : 1000;
+        convolver.buffer = createReverbImpulse(audioContext, size, decay);
         
         // Set up wet/dry mix
         const wetAmount = (node.params.mix || 0) / 100;
@@ -95,21 +105,110 @@
         dryGain.gain.value = dryAmount;
         wetGain.gain.value = wetAmount;
         
+        // Connect internal routing
+        inputGain.connect(dryGain);
+        inputGain.connect(convolver);
+        
         nodes.set(node.id, {
           type: 'reverb',
-          input: merger,
+          input: inputGain,
           output: merger,
+          inputGain,
           dryGain,
           wetGain,
           convolver,
           merger,
-          params: node.params
+          params: node.params,
+          audioContext
         });
         
         // Store internal connections
         connections.push({ from: convolver, to: wetGain });
         connections.push({ from: wetGain, to: merger });
         connections.push({ from: dryGain, to: merger });
+      } else if (node.type === 'delay') {
+        // Create delay effect chain
+        const inputGain = audioContext.createGain();
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        const delayNode = audioContext.createDelay(2); // Max 2 seconds delay
+        const feedbackGain = audioContext.createGain();
+        const merger = audioContext.createGain();
+        
+        // Set delay time in seconds (convert from milliseconds)
+        const delayTime = node.params.delayTime !== undefined ? node.params.delayTime / 1000 : 0.5;
+        delayNode.delayTime.value = delayTime;
+        
+        // Set feedback amount (0-1 range)
+        const feedbackAmount = (node.params.feedback || 0) / 100;
+        feedbackGain.gain.value = feedbackAmount;
+        
+        // Set up wet/dry mix
+        const wetAmount = (node.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        dryGain.gain.value = dryAmount;
+        wetGain.gain.value = wetAmount;
+        
+        // Connect internal routing
+        inputGain.connect(dryGain);
+        inputGain.connect(delayNode);
+        
+        nodes.set(node.id, {
+          type: 'delay',
+          input: inputGain,
+          output: merger,
+          inputGain,
+          dryGain,
+          wetGain,
+          delayNode,
+          feedbackGain,
+          merger,
+          params: node.params,
+          audioContext
+        });
+        
+        // Store internal connections
+        connections.push({ from: delayNode, to: feedbackGain });
+        connections.push({ from: feedbackGain, to: delayNode }); // Feedback loop
+        connections.push({ from: delayNode, to: wetGain });
+        connections.push({ from: wetGain, to: merger });
+        connections.push({ from: dryGain, to: merger });
+      } else if (node.type === 'gain') {
+        // Create gain node with volume and panning
+        const inputGain = audioContext.createGain();
+        const gainNode = audioContext.createGain();
+        const pannerNode = audioContext.createStereoPanner();
+        
+        // Convert dB to linear gain (-inf dB = 0, 0 dB = 1, +12 dB = ~4)
+        const volumeDb = node.params.volume !== undefined ? node.params.volume : 0;
+        let gainValue;
+        if (volumeDb <= -60) {
+          gainValue = 0; // Treat -60dB and below as silence
+        } else {
+          gainValue = Math.pow(10, volumeDb / 20);
+        }
+        gainNode.gain.value = gainValue;
+        
+        // Set pan value (-100 to +100 maps to -1 to +1)
+        const panValue = node.params.pan !== undefined ? node.params.pan / 100 : 0;
+        pannerNode.pan.value = panValue;
+        
+        // Connect routing: input -> gain -> panner
+        inputGain.connect(gainNode);
+        
+        nodes.set(node.id, {
+          type: 'gain',
+          input: inputGain,
+          output: pannerNode,
+          inputGain,
+          gainNode,
+          pannerNode,
+          params: node.params,
+          audioContext
+        });
+        
+        // Store internal connections
+        connections.push({ from: gainNode, to: pannerNode });
       } else if (node.type === 'output') {
         // Add a master gain to control overall volume
         const masterGain = audioContext.createGain();
@@ -132,17 +231,53 @@
       if (sourceNode && targetNode) {
         if (sourceNode.type === 'input') {
           if (targetNode.type === 'reverb') {
-            // Connect to both dry and wet paths
-            sourceNode.audioNode.connect(targetNode.dryGain);
-            sourceNode.audioNode.connect(targetNode.convolver);
+            // Connect to reverb input
+            sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect to delay input
+            sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'gain') {
+            // Connect to gain input
+            sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
           }
         } else if (sourceNode.type === 'reverb') {
           if (targetNode.type === 'reverb') {
             // Connect reverb output to next reverb input
-            sourceNode.output.connect(targetNode.dryGain);
-            sourceNode.output.connect(targetNode.convolver);
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect reverb output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'gain') {
+            // Connect reverb output to gain input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'delay') {
+          if (targetNode.type === 'reverb') {
+            // Connect delay output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect delay output to next delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'gain') {
+            // Connect delay output to gain input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'gain') {
+          if (targetNode.type === 'reverb') {
+            // Connect gain output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect gain output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'gain') {
+            // Connect gain output to next gain input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -163,9 +298,9 @@
     const graph = audioGraphs.get(element);
     if (!graph) return;
     
-    // First, set all reverb nodes to 0 (in case some are orphaned)
+    // First, set all effect nodes to 0 (in case some are orphaned)
     graph.forEach((node) => {
-      if (node.type === 'reverb' && node.wetGain && node.dryGain) {
+      if ((node.type === 'reverb' || node.type === 'delay') && node.wetGain && node.dryGain) {
         node.wetGain.gain.value = 0;
         node.dryGain.gain.value = 1;
       }
@@ -176,7 +311,7 @@
       const graphNode = settings.audioGraph.nodes.find(n => n.id === nodeId);
       if (!graphNode) {
         // This node doesn't exist in the graph anymore, ensure it's muted
-        if (node.type === 'reverb' && node.wetGain) {
+        if ((node.type === 'reverb' || node.type === 'delay') && node.wetGain) {
           node.wetGain.gain.value = 0;
           node.dryGain.gain.value = 1;
         }
@@ -192,7 +327,76 @@
         node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
         node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
         
-        console.log(`Patchrome: Updated reverb ${nodeId} - wet: ${wetAmount}, dry: ${dryAmount}`);
+        // Check if size or decay changed, and update impulse if needed
+        const currentSize = graphNode.params.size !== undefined ? graphNode.params.size : 50;
+        const currentDecay = graphNode.params.decay !== undefined ? graphNode.params.decay : 1000;
+        const prevSize = node.params.size !== undefined ? node.params.size : 50;
+        const prevDecay = node.params.decay !== undefined ? node.params.decay : 1000;
+        
+        if (currentSize !== prevSize || currentDecay !== prevDecay) {
+          // Need to recreate convolver node because Web Audio API doesn't allow buffer changes
+          const oldConvolver = node.convolver;
+          const newConvolver = node.audioContext.createConvolver();
+          newConvolver.buffer = createReverbImpulse(node.audioContext, currentSize, currentDecay);
+          
+          // Disconnect old convolver
+          try { oldConvolver.disconnect(); } catch(e) {}
+          
+          // Reconnect with new convolver
+          node.inputGain.connect(newConvolver);
+          newConvolver.connect(node.wetGain);
+          
+          // Update the node reference
+          node.convolver = newConvolver;
+        }
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated reverb ${nodeId} - wet: ${wetAmount}, dry: ${dryAmount}, size: ${currentSize}, decay: ${currentDecay}`);
+      } else if (node.type === 'delay' && node.wetGain && node.dryGain) {
+        const wetAmount = (graphNode.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        
+        // Update delay time (convert from ms to seconds)
+        const delayTime = graphNode.params.delayTime !== undefined ? graphNode.params.delayTime / 1000 : 0.5;
+        node.delayNode.delayTime.setValueAtTime(delayTime, currentTime);
+        
+        // Update feedback
+        const feedbackAmount = (graphNode.params.feedback || 0) / 100;
+        node.feedbackGain.gain.setValueAtTime(feedbackAmount, currentTime);
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated delay ${nodeId} - wet: ${wetAmount}, dry: ${dryAmount}, delay: ${delayTime}s, feedback: ${feedbackAmount}`);
+      } else if (node.type === 'gain' && node.gainNode && node.pannerNode) {
+        // Update volume (convert dB to linear)
+        const volumeDb = graphNode.params.volume !== undefined ? graphNode.params.volume : 0;
+        let gainValue;
+        if (volumeDb <= -60) {
+          gainValue = 0; // Treat -60dB and below as silence
+        } else {
+          gainValue = Math.pow(10, volumeDb / 20);
+        }
+        
+        // Update pan value (-100 to +100 maps to -1 to +1)
+        const panValue = graphNode.params.pan !== undefined ? graphNode.params.pan / 100 : 0;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.gainNode.gain.setValueAtTime(gainValue, currentTime);
+        node.pannerNode.pan.setValueAtTime(panValue, currentTime);
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated gain ${nodeId} - volume: ${volumeDb}dB (${gainValue}), pan: ${panValue}`);
       }
     });
   }
@@ -212,6 +416,9 @@
       if (node.audioNode && node.audioNode.disconnect) {
         try { node.audioNode.disconnect(); } catch(e) {}
       }
+      if (node.inputGain) {
+        try { node.inputGain.disconnect(); } catch(e) {}
+      }
       if (node.dryGain) {
         try { node.dryGain.disconnect(); } catch(e) {}
       }
@@ -221,11 +428,26 @@
       if (node.convolver) {
         try { node.convolver.disconnect(); } catch(e) {}
       }
+      if (node.delayNode) {
+        try { node.delayNode.disconnect(); } catch(e) {}
+      }
+      if (node.feedbackGain) {
+        try { node.feedbackGain.disconnect(); } catch(e) {}
+      }
       if (node.merger) {
         try { node.merger.disconnect(); } catch(e) {}
       }
+      if (node.gainNode) {
+        try { node.gainNode.disconnect(); } catch(e) {}
+      }
+      if (node.pannerNode) {
+        try { node.pannerNode.disconnect(); } catch(e) {}
+      }
       if (node.masterGain) {
         try { node.masterGain.disconnect(); } catch(e) {}
+      }
+      if (node.scriptProcessor) {
+        try { node.scriptProcessor.disconnect(); } catch(e) {}
       }
     });
   }
@@ -357,6 +579,7 @@
   // Listen for settings from content script
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'PATCHROME_SETTINGS') {
+      console.log('[Inject] Received PATCHROME_SETTINGS:', event.data.settings);
       const newSettings = event.data.settings;
       let needsRebuild = false;
       
@@ -379,16 +602,22 @@
             needsRebuild = true;
             console.log('Patchrome: Audio graph rebuild triggered');
           }
+          
+          // Always update the settings
           settings.audioGraph = newSettings.audioGraph;
         }
         settings.enabled = newSettings.enabled !== false;
       }
       
+      console.log(`[Inject] needsRebuild: ${needsRebuild}, settings.audioGraph:`, settings.audioGraph);
+      
       if (needsRebuild) {
         // Force rebuild all audio graphs
+        console.log('[Inject] Rebuilding audio graphs');
         const elements = document.querySelectorAll('audio, video');
         elements.forEach(element => setupAudioProcessing(element, true));
       } else {
+        console.log('[Inject] Updating audio parameters only');
         updateAllMedia();
       }
     }

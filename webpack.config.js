@@ -34,6 +34,8 @@ module.exports = {
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'icon*.png', to: '[name][ext]' },
+        { from: 'logo.png', to: 'logo.png' },
+        { from: 'jumango.gif', to: 'jumango.gif' },
         { from: 'src/inject.js', to: 'inject.js' }
       ]
     }),

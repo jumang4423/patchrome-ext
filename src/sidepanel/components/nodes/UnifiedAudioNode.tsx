@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { AudioNode, InputParamDOM, ReverbParamDOM, OutputParamDOM, ValueType } from '../../../types/nodeGraphStructure';
+import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, GainParamDOM, OutputParamDOM, ValueType } from '../../../types/nodeGraphStructure';
 
 interface UnifiedAudioNodeData {
   type: AudioNode['type'];
@@ -25,6 +25,19 @@ const nodeIcons = {
       <path d="M2 17h20v2H2zm1.15-4.05L4 11.47l.85 1.48 1.3-.75-.85-1.48H7v-1.5H5.3l.85-1.48L4.85 7 4 8.47 3.15 7l-1.3.75.85 1.48H1v1.5h1.7l-.85 1.48 1.3.75zm6.7-.75l1.48.85 1.48-.85-.85-1.48H14v-1.5h-2.05l.85-1.48L11.5 7 10 8.5 8.5 7l-1.3.75.85 1.48H6v1.5h2.05l-.85 1.48zm8 0l1.48.85 1.48-.85-.85-1.48H22v-1.5h-2.05l.85-1.48L19.5 7 18 8.5 16.5 7l-1.3.75.85 1.48H14v1.5h2.05l-.85 1.48z" fill="#4ecdc4"/>
     </svg>
   ),
+  delay: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2v20M2 12h20" stroke="#ffa502" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="7" cy="12" r="1.5" fill="#ffa502"/>
+      <circle cx="12" cy="12" r="1.5" fill="#ffa502"/>
+      <circle cx="17" cy="12" r="1.5" fill="#ffa502"/>
+    </svg>
+  ),
+  gain: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 17V7M3 12h6M15 17V7M15 12h6" stroke="#9b59b6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
   output: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="#4caf50"/>
@@ -35,6 +48,8 @@ const nodeIcons = {
 const nodeHeaders = {
   input: 'Audio Input',
   reverb: 'Reverb',
+  delay: 'Delay',
+  gain: 'Gain',
   output: 'Audio Output'
 };
 
@@ -44,6 +59,10 @@ const getParamDOM = (type: AudioNode['type']) => {
       return InputParamDOM;
     case 'reverb':
       return ReverbParamDOM;
+    case 'delay':
+      return DelayParamDOM;
+    case 'gain':
+      return GainParamDOM;
     case 'output':
       return OutputParamDOM;
     default:
@@ -54,6 +73,21 @@ const getParamDOM = (type: AudioNode['type']) => {
 const formatValue = (value: number, valueType: ValueType) => {
   if (valueType === 'percentage') {
     return `${value}%`;
+  } else if (valueType === 'milliseconds') {
+    return `${value}ms`;
+  } else if (valueType === 'decibels') {
+    if (value <= -60) {
+      return '-∞ dB';
+    }
+    return `${value.toFixed(1)} dB`;
+  } else if (valueType === 'pan') {
+    if (value === 0) {
+      return 'C';
+    } else if (value < 0) {
+      return `${Math.abs(value)}L`;
+    } else {
+      return `${value}R`;
+    }
   }
   return value.toFixed(2);
 };
@@ -66,9 +100,11 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
 
   const handleChange = (key: string, valueType: ValueType) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
-    const newValue = valueType === 'percentage' 
+    const newValue = (valueType === 'percentage' || valueType === 'milliseconds')
       ? parseInt(rawValue, 10) 
       : parseFloat(rawValue);
+    
+    console.log(`[UnifiedAudioNode] Parameter changed - Type: ${type}, Key: ${key}, Value: ${newValue}, ValueType: ${valueType}`);
     
     if (onChange) {
       onChange(key, newValue);
@@ -120,9 +156,10 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
               : formatValue(value, param.valueType as ValueType);
             
             return (
-              <div key={param.key}>
+              <div key={param.key} style={{ marginBottom: '16px' }}>
                 <label className="node-label">
-                  {param.label} ({displayValue})
+                  <span style={{ marginRight: '8px' }}>{param.label}</span>
+                  <span style={{ color: '#868e96', fontWeight: 'normal' }}>({displayValue})</span>
                 </label>
                 <div className="node-slider-container nodrag">
                   <input
