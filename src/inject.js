@@ -163,15 +163,36 @@
     const graph = audioGraphs.get(element);
     if (!graph) return;
     
+    // First, set all reverb nodes to 0 (in case some are orphaned)
+    graph.forEach((node) => {
+      if (node.type === 'reverb' && node.wetGain && node.dryGain) {
+        node.wetGain.gain.value = 0;
+        node.dryGain.gain.value = 1;
+      }
+    });
+    
+    // Then update only the nodes that exist in the current graph
     graph.forEach((node, nodeId) => {
       const graphNode = settings.audioGraph.nodes.find(n => n.id === nodeId);
-      if (!graphNode) return;
+      if (!graphNode) {
+        // This node doesn't exist in the graph anymore, ensure it's muted
+        if (node.type === 'reverb' && node.wetGain) {
+          node.wetGain.gain.value = 0;
+          node.dryGain.gain.value = 1;
+        }
+        return;
+      }
       
       if (node.type === 'reverb' && node.wetGain && node.dryGain) {
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
-        node.wetGain.gain.value = wetAmount;
-        node.dryGain.gain.value = dryAmount;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        
+        console.log(`Patchrome: Updated reverb ${nodeId} - wet: ${wetAmount}, dry: ${dryAmount}`);
       }
     });
   }
@@ -348,11 +369,15 @@
           settings.reverb = newSettings.reverb;
         }
         if (newSettings.audioGraph) {
-          // Check if edges have changed
+          // Check if edges or nodes have changed
           const oldEdges = JSON.stringify(settings.audioGraph.edges);
           const newEdges = JSON.stringify(newSettings.audioGraph.edges);
-          if (oldEdges !== newEdges) {
+          const oldNodes = JSON.stringify(settings.audioGraph.nodes.map(n => ({ id: n.id, type: n.type })));
+          const newNodes = JSON.stringify(newSettings.audioGraph.nodes.map(n => ({ id: n.id, type: n.type })));
+          
+          if (oldEdges !== newEdges || oldNodes !== newNodes) {
             needsRebuild = true;
+            console.log('Patchrome: Audio graph rebuild triggered');
           }
           settings.audioGraph = newSettings.audioGraph;
         }

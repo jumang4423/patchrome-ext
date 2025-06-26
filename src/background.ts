@@ -2,8 +2,6 @@ import { Settings } from './shared/types';
 
 let currentSettings: Settings = {
   enabled: true,
-  speed: 1.0,
-  reverb: 0,
   audioGraph: {
     nodes: [
       { id: '1', type: 'input', params: { speed: 1.0 } },

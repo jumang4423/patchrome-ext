@@ -317,10 +317,25 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .react-flow__edge-path {
   stroke: #dee2e6;
   stroke-width: 3;
+  cursor: pointer;
 }
 
 .react-flow__edge-path:hover {
   stroke: #adb5bd;
+}
+
+/* Selected edge animation */
+.react-flow__edge.selected .react-flow__edge-path {
+  animation: pulse-edge 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-edge {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
 /* Bring edges to front */

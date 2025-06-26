@@ -11,27 +11,25 @@ const MaxStyleEdge: React.FC<EdgeProps> = ({
   targetPosition,
   style = {},
   markerEnd,
+  selected,
 }) => {
   // Calculate the sagging effect
   const distance = Math.sqrt(Math.pow(targetX - sourceX, 2) + Math.pow(targetY - sourceY, 2));
-  const sagAmount = Math.min(distance * 1.2, 500); // Sag proportional to distance, max 500px
-  
-  // Adjust for horizontal handles (handles on left/right sides)
-  const horizontalOffset = -Math.abs(targetX - sourceX) * 0.5;
+  const sagAmount = Math.min(distance * 0.4, 120); // Reduced sag for smoother curves
   
   // Create control points for a more natural cable droop
   let path: string;
   
   if (sourcePosition === Position.Right && targetPosition === Position.Left) {
     // Right to Left connection (most common in this layout)
-    // Create a cubic bezier curve that exits horizontally from the source and enters horizontally to the target
-    const minOffset = 50; // Minimum horizontal offset to ensure smooth curves
-    const offset = Math.max(minOffset, Math.abs(targetX - sourceX) * 0.5);
+    // Create a smoother cubic bezier curve
+    const minOffset = 80; // Increased minimum offset for smoother curves
+    const offset = Math.max(minOffset, Math.abs(targetX - sourceX) * 0.3);
     
     const controlX1 = sourceX + offset;
-    const controlY1 = sourceY + sagAmount * 0.3;
+    const controlY1 = sourceY + sagAmount * 0.5;
     const controlX2 = targetX - offset;
-    const controlY2 = targetY + sagAmount * 0.3;
+    const controlY2 = targetY + sagAmount * 0.5;
     
     path = `M ${sourceX},${sourceY} C ${controlX1},${controlY1} ${controlX2},${controlY2} ${targetX},${targetY}`;
   } else {
@@ -41,29 +39,56 @@ const MaxStyleEdge: React.FC<EdgeProps> = ({
     path = `M ${sourceX},${sourceY} Q ${midX},${midY} ${targetX},${targetY}`;
   }
   
+  // Create a unique gradient ID for this edge
+  const gradientId = `stripe-gradient-${id}`;
+  
   return (
     <>
+      <defs>
+        {/* Define striped pattern for power cable effect */}
+        <pattern id={gradientId} patternUnits="userSpaceOnUse" width="16" height="4" patternTransform="rotate(45)">
+          <rect width="8" height="4" fill={selected ? "#4ecdc4" : "#adb5bd"} />
+          <rect x="8" width="8" height="4" fill={selected ? "#6eddd5" : "#ced4da"} />
+        </pattern>
+      </defs>
+      
+      {/* Shadow for depth */}
+      <path
+        style={{
+          stroke: selected ? '#4ecdc420' : '#00000015',
+          strokeWidth: selected ? 8 : 6,
+          fill: 'none',
+          filter: selected ? 'blur(6px)' : 'blur(4px)',
+        }}
+        d={path}
+        transform="translate(0, 2)"
+      />
+      
+      {/* Main cable with striped pattern */}
       <path
         id={id}
         style={{
           ...style,
-          strokeWidth: 3,
+          stroke: `url(#${gradientId})`,
+          strokeWidth: selected ? 5 : 4,
           fill: 'none',
+          strokeLinecap: 'round',
+          transition: 'stroke-width 0.2s ease',
         }}
         className="react-flow__edge-path"
         d={path}
         markerEnd={markerEnd}
       />
-      {/* Add a subtle shadow for depth */}
+      
+      {/* Subtle highlight on top */}
       <path
         style={{
-          stroke: '#00000020',
-          strokeWidth: 4,
+          stroke: selected ? '#ffffff90' : '#ffffff60',
+          strokeWidth: selected ? 2 : 1.5,
           fill: 'none',
-          filter: 'blur(2px)',
         }}
         d={path}
-        transform="translate(0, 2)"
+        transform="translate(0, -1)"
       />
     </>
   );

@@ -19,7 +19,5 @@ export interface AudioGraphData {
 
 export interface Settings {
   enabled: boolean;
-  speed: number;    // Legacy, will be moved to graph
-  reverb: number;   // Legacy, will be moved to graph
   audioGraph: AudioGraphData;
 }

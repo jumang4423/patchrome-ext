@@ -11,7 +11,9 @@ import ReactFlow, {
   MiniMap,
   BackgroundVariant,
   NodeChange,
+  EdgeChange,
   applyNodeChanges,
+  applyEdgeChanges,
   useReactFlow,
   ReactFlowProvider,
 } from 'reactflow';
@@ -31,37 +33,95 @@ const edgeTypes = {
 
 const initialEdges: Edge[] = [
   { id: 'e1-2', source: '1', target: '2', type: 'maxStyle' },
-  { id: 'e2-3', source: '2', target: '3', type: 'maxStyle' },
 ];
 
 interface FlowDiagramProps {
-  speed: number;
-  reverb: number;
   audioGraph: AudioGraphData;
-  onSpeedChange: (value: number) => void;
-  onReverbChange: (value: number) => void;
   onGraphChange: (graph: AudioGraphData) => void;
 }
 
-const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGraph, onSpeedChange, onReverbChange, onGraphChange }) => {
+const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChange }) => {
   const [nodeIdCounter, setNodeIdCounter] = React.useState(4);
   const { getViewport } = useReactFlow();
   const [nodes, setNodes] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges] = useEdgesState([]);
   const [isInitialized, setIsInitialized] = React.useState(false);
-  const [needsSync, setNeedsSync] = React.useState(false);
+  const [hasLoadedFromStorage, setHasLoadedFromStorage] = React.useState(false);
   
+  // Helper function to save current state to localStorage
+  const saveToLocalStorage = useCallback((nodesList: Node[], edgesList: Edge[]) => {
+    const nodeData = nodesList.map(node => {
+      const baseNode = {
+        id: node.id,
+        type: node.data.type as 'input' | 'reverb' | 'output',
+        params: {} as Record<string, number>
+      };
+      
+      if (node.data.type === 'input') {
+        baseNode.params = { speed: node.data.speed || 1.0 };
+      } else if (node.data.type === 'reverb') {
+        baseNode.params = { mix: node.data.mix || 0 };
+      }
+      
+      return baseNode;
+    });
+    
+    const edgeData = edgesList.map(edge => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target
+    }));
+    
+    const newGraph = {
+      nodes: nodeData,
+      edges: edgeData
+    };
+    
+    // Save graph structure
+    localStorage.setItem('patchrome-flow-graph', JSON.stringify(newGraph));
+    
+    // Save positions
+    const positions: Record<string, { x: number; y: number }> = {};
+    nodesList.forEach(node => {
+      positions[node.id] = node.position;
+    });
+    localStorage.setItem('patchrome-flow-positions', JSON.stringify(positions));
+    
+    // Also update parent component
+    onGraphChange(newGraph);
+  }, [onGraphChange]);
+
+  // Handler for node value changes
+  const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number) => {
+    setNodes((currentNodes) => {
+      const updatedNodes = currentNodes.map(node => 
+        node.id === nodeId 
+          ? { ...node, data: { ...node.data, [key]: value } }
+          : node
+      );
+      
+      // Save to localStorage with current state
+      setEdges((currentEdges) => {
+        saveToLocalStorage(updatedNodes, currentEdges);
+        return currentEdges;
+      });
+      
+      return updatedNodes;
+    });
+  }, [setNodes, setEdges, saveToLocalStorage]);
+
   const handleRemoveNode = useCallback((nodeId: string) => {
     setNodes((nds) => {
       const filteredNodes = nds.filter((node) => node.id !== nodeId);
+      setEdges((eds) => {
+        const newEdges = eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+        // Save immediately
+        saveToLocalStorage(filteredNodes, newEdges);
+        return newEdges;
+      });
       return filteredNodes;
     });
-    setEdges((eds) => {
-      const newEdges = eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
-      return newEdges;
-    });
-    setNeedsSync(true);
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, saveToLocalStorage]);
 
   const initialNodes: Node[] = [
     {
@@ -69,11 +129,10 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGrap
       type: 'unifiedAudio',
       data: { 
         type: 'input' as const,
-        speed: speed,
+        speed: 1.0,
         deletable: false,
         onChange: (key: string, value: number) => {
           if (key === 'speed') {
-            onSpeedChange(value);
           }
         }
       },
@@ -82,22 +141,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGrap
     },
     {
       id: '2',
-      type: 'unifiedAudio',
-      data: { 
-        type: 'reverb' as const,
-        mix: reverb,
-        deletable: true,
-        onChange: (key: string, value: number) => {
-          if (key === 'mix') {
-            onReverbChange(value);
-          }
-        },
-        onRemove: () => handleRemoveNode('2')
-      },
-      position: { x: 100, y: 350 },
-    },
-    {
-      id: '3',
       type: 'unifiedAudio',
       data: {
         type: 'output' as const,
@@ -127,9 +170,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGrap
             speed: node.params.speed || 1.0,
             deletable: false,
             onChange: (key: string, value: number) => {
-              if (key === 'speed') {
-                onSpeedChange(value);
-              }
+              handleNodeValueChange(node.id, key, value);
             }
           }
         };
@@ -141,9 +182,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGrap
             mix: node.params.mix || 0,
             deletable: true,
             onChange: (key: string, value: number) => {
-              if (key === 'mix') {
-                onReverbChange(value);
-              }
+              handleNodeValueChange(node.id, key, value);
             },
             onRemove: () => handleRemoveNode(node.id)
           }
@@ -158,60 +197,78 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGrap
         };
       }
     });
-  }, [onSpeedChange, onReverbChange, handleRemoveNode]);
+  }, [handleRemoveNode, handleNodeValueChange]);
 
-  // Initialize from audioGraph
+  // Load graph state from localStorage on mount
   React.useEffect(() => {
-    if (!isInitialized && audioGraph) {
-      const flowNodes = convertGraphToNodes(audioGraph);
-      const flowEdges = audioGraph.edges.map(edge => ({
-        ...edge,
-        type: 'maxStyle'
-      }));
+    if (!hasLoadedFromStorage) {
+      const savedGraph = localStorage.getItem('patchrome-flow-graph');
+      const savedPositions = localStorage.getItem('patchrome-flow-positions');
       
-      setNodes(flowNodes);
-      setEdges(flowEdges);
-      setIsInitialized(true);
-      
-      // Set node counter based on existing nodes
-      const maxId = Math.max(...audioGraph.nodes.map(n => parseInt(n.id)));
-      setNodeIdCounter(maxId + 1);
-    }
-  }, [audioGraph, isInitialized, setNodes, setEdges, convertGraphToNodes]);
-
-  // Sync ReactFlow state to audioGraph when needed
-  React.useEffect(() => {
-    if (needsSync && nodes.length > 0) {
-      const nodeData = nodes.map(node => {
-        const baseNode = {
-          id: node.id,
-          type: node.data.type as 'input' | 'reverb' | 'output',
-          params: {} as Record<string, number>
-        };
-        
-        if (node.data.type === 'input') {
-          baseNode.params = { speed: node.data.speed || 1.0 };
-        } else if (node.data.type === 'reverb') {
-          baseNode.params = { mix: node.data.mix || 0 };
+      if (savedGraph && savedPositions) {
+        try {
+          const parsedGraph = JSON.parse(savedGraph) as AudioGraphData;
+          const parsedPositions = JSON.parse(savedPositions) as Record<string, { x: number; y: number }>;
+          
+          // Convert saved graph to nodes with saved positions
+          const flowNodes = convertGraphToNodes(parsedGraph).map(node => ({
+            ...node,
+            position: parsedPositions[node.id] || node.position
+          }));
+          
+          const flowEdges = parsedGraph.edges.map(edge => ({
+            ...edge,
+            type: 'maxStyle'
+          }));
+          
+          setNodes(flowNodes);
+          setEdges(flowEdges);
+          setIsInitialized(true);
+          
+          // Set node counter based on existing nodes
+          const maxId = Math.max(...parsedGraph.nodes.map(n => parseInt(n.id)));
+          setNodeIdCounter(maxId + 1);
+          
+          // Update the parent component's audioGraph
+          onGraphChange(parsedGraph);
+        } catch (error) {
+          console.error('Failed to load saved graph:', error);
         }
-        
-        return baseNode;
-      });
-      
-      const edgeData = edges.map(edge => ({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target
-      }));
-      
-      onGraphChange({
-        nodes: nodeData,
-        edges: edgeData
-      });
-      
-      setNeedsSync(false);
+      } else {
+        // No saved graph, initialize with default nodes
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+        setIsInitialized(true);
+        setNodeIdCounter(3);
+      }
+      setHasLoadedFromStorage(true);
     }
-  }, [needsSync, nodes, edges, onGraphChange]);
+  }, [hasLoadedFromStorage, convertGraphToNodes, setNodes, setEdges, onGraphChange]);
+
+  // Initialize from audioGraph if no saved state
+  React.useEffect(() => {
+    if (!isInitialized && audioGraph && hasLoadedFromStorage) {
+      // Check if we loaded from localStorage
+      const savedGraph = localStorage.getItem('patchrome-flow-graph');
+      if (!savedGraph) {
+        // No saved state, use audioGraph from props
+        const flowNodes = convertGraphToNodes(audioGraph);
+        const flowEdges = audioGraph.edges.map(edge => ({
+          ...edge,
+          type: 'maxStyle'
+        }));
+        
+        setNodes(flowNodes);
+        setEdges(flowEdges);
+        setIsInitialized(true);
+        
+        // Set node counter based on existing nodes
+        const maxId = Math.max(...audioGraph.nodes.map(n => parseInt(n.id)));
+        setNodeIdCounter(maxId + 1);
+      }
+    }
+  }, [audioGraph, isInitialized, hasLoadedFromStorage, setNodes, setEdges, convertGraphToNodes]);
+
 
   // Custom handler to prevent deletion of audio input and output nodes
   const onNodesChange = useCallback(
@@ -232,34 +289,58 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGrap
       setNodes((nds) => {
         const updatedNodes = applyNodeChanges(filteredChanges, nds);
         
-        // Sync graph if there are structural changes
+        // Save positions to localStorage whenever nodes change
+        const positions: Record<string, { x: number; y: number }> = {};
+        updatedNodes.forEach(node => {
+          positions[node.id] = node.position;
+        });
+        localStorage.setItem('patchrome-flow-positions', JSON.stringify(positions));
+        
+        // Save graph if there are structural changes
         if (hasNonPositionChanges) {
-          setNeedsSync(true);
+          saveToLocalStorage(updatedNodes, edges);
         }
         
         return updatedNodes;
       });
     },
-    [setNodes]
+    [setNodes, edges, saveToLocalStorage]
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
       setEdges((eds) => {
         const newEdges = addEdge({ ...params, type: 'maxStyle' }, eds);
-        setNeedsSync(true);
+        // Save immediately when edges change
+        saveToLocalStorage(nodes, newEdges);
         return newEdges;
       });
     },
-    [setEdges]
+    [setEdges, nodes, saveToLocalStorage]
+  );
+  
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      // Check if any edges are being removed
+      const hasRemovals = changes.some(change => change.type === 'remove');
+      
+      // Apply the changes using ReactFlow's built-in handler
+      setEdges((eds) => {
+        const updated = applyEdgeChanges(changes, eds);
+        if (hasRemovals) {
+          // Save immediately when edges are removed
+          saveToLocalStorage(nodes, updated);
+        }
+        return updated;
+      });
+    },
+    [setEdges, nodes, saveToLocalStorage]
   );
 
   const handleAddEffect = useCallback((effectType: string) => {
     if (effectType === 'reverb') {
-      // Get the current viewport
       const viewport = getViewport();
       
-      // Calculate the center of the viewport
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
       
@@ -272,61 +353,42 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ speed, reverb, audioGrap
           mix: 0,
           deletable: true,
           onChange: (key: string, value: number) => {
-            if (key === 'mix') {
-            }
+            handleNodeValueChange(newNodeId, key, value);
           },
           onRemove: () => handleRemoveNode(newNodeId)
         },
-        position: { x: centerX - 110, y: centerY - 75 }, // Offset by half the node size
+        position: { x: centerX - 110, y: centerY - 75 },
       };
+      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updatedNodes = [...nds, newNode];
-        setNeedsSync(true);
-        return updatedNodes;
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
       });
+      
       setNodeIdCounter((prev) => prev + 1);
     }
-  }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode]);
+  }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode, handleNodeValueChange, edges, saveToLocalStorage]);
 
-  // Update node data when props change
+  // Update onRemove handlers when handleRemoveNode changes
   React.useEffect(() => {
+    if (!isInitialized) return;
+    
     setNodes((nds) => {
-      const updatedNodes = nds.map((node) => {
-        if (node.id === '1') {
+      return nds.map((node) => {
+        if (node.data.deletable) {
           return {
             ...node,
-            data: { 
+            data: {
               ...node.data,
-              speed: speed,
-              onChange: (key: string, value: number) => {
-                if (key === 'speed') {
-                  onSpeedChange(value);
-                }
-              }
-            },
-          };
-        }
-        if (node.id === '2') {
-          return {
-            ...node,
-            data: { 
-              ...node.data,
-              mix: reverb,
-              onChange: (key: string, value: number) => {
-                if (key === 'mix') {
-                  onReverbChange(value);
-                }
-              },
-              onRemove: () => handleRemoveNode('2')
-            },
+              onRemove: () => handleRemoveNode(node.id)
+            }
           };
         }
         return node;
       });
-      // Don't log here as this runs on every prop change
-      return updatedNodes;
     });
-  }, [speed, reverb, onSpeedChange, onReverbChange, setNodes, handleRemoveNode]);
+  }, [isInitialized, setNodes, handleRemoveNode]);
 
   return (
     <div style={{ 
