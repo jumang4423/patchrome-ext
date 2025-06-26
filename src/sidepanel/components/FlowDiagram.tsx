@@ -23,6 +23,7 @@ import MaxStyleEdge from './edges/MaxStyleEdge';
 import AddEffectButton from './AddEffectButton';
 import MenuButton from './MenuButton';
 import InfoModal from './InfoModal';
+import LogoButton from './LogoButton';
 import { AudioGraphData } from '../../shared/types';
 
 const nodeTypes = {
@@ -485,11 +486,8 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     }
   }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode, handleNodeValueChange, edges, saveToLocalStorage]);
 
-  const handleMenuAction = useCallback((action: 'info' | 'import' | 'export') => {
+  const handleMenuAction = useCallback((action: 'import' | 'export') => {
     switch (action) {
-      case 'info':
-        setIsInfoModalOpen(true);
-        break;
       case 'import':
         // Import patch from file
         const input = document.createElement('input');
@@ -583,6 +581,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         <Controls />
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
+      <LogoButton onClick={() => setIsInfoModalOpen(true)} />
       <AddEffectButton onAddEffect={handleAddEffect} />
       <MenuButton onAction={handleMenuAction} />
       <InfoModal 

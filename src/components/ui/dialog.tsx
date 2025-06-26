@@ -107,14 +107,13 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       <button
-        className={cn(
-          "absolute right-4 top-4 rounded-full w-8 h-8 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-gray-100 transition-all",
-          "text-gray-500 hover:text-gray-700"
-        )}
+        className="dialog-close-button"
         onClick={() => setOpen(false)}
+        aria-label="Close dialog"
       >
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
       </button>
       {children}
     </div>

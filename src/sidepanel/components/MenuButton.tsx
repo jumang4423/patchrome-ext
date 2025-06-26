@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Info, Download, Upload } from 'lucide-react';
+import { Menu, Download, Upload } from 'lucide-react';
 
 interface MenuButtonProps {
-  onAction: (action: 'info' | 'import' | 'export') => void;
+  onAction: (action: 'import' | 'export') => void;
 }
 
 const MenuButton: React.FC<MenuButtonProps> = ({ onAction }) => {
@@ -36,7 +36,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onAction }) => {
     }
   }, [isOpen]);
 
-  const handleAction = (action: 'info' | 'import' | 'export') => {
+  const handleAction = (action: 'import' | 'export') => {
     onAction(action);
     setIsOpen(false);
   };
@@ -59,17 +59,6 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onAction }) => {
           </div>
           <div className="menu-dropdown-separator" />
           <div className="menu-dropdown-items">
-            <button
-              className="menu-dropdown-item"
-              onClick={() => handleAction('info')}
-            >
-              <div className="menu-item-content">
-                <div className="menu-item-icon">
-                  <Info size={16} />
-                </div>
-                <span>Info</span>
-              </div>
-            </button>
             <button
               className="menu-dropdown-item"
               onClick={() => handleAction('import')}

@@ -219,6 +219,67 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(0.95);
 }
 
+/* Logo button */
+.logo-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 80px;
+  height: 80px;
+  background: transparent;
+  border: none;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 0;
+  cursor: pointer;
+}
+
+.logo-button:hover {
+  transform: scale(1.1);
+}
+
+.logo-button:active {
+  transform: scale(0.95);
+}
+
+.logo-button-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Dialog close button matching node exit button style */
+.dialog-close-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100%;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.dialog-close-button:hover {
+  background: #dc3545;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.dialog-close-button:active {
+  transform: scale(0.95);
+}
+
 .node-icon {
   font-size: 24px;
   display: flex;
