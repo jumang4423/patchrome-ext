@@ -417,8 +417,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Effect Dropdown */
 .effect-dropdown {
   position: absolute;
-  bottom: calc(100% + 12px);
-  right: 0;
+  bottom: calc(100% - 36px);
+  right: calc(100% + 12px); /* Position to the left of button */
   background: #ffffff;
   border: 1px solid #e9ecef;
   border-radius: 18px;
@@ -427,7 +427,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   opacity: 0;
   transform: translateY(10px) scale(0.95);
   animation: fadeInUp 0.2s ease forwards;
-  transform-origin: bottom right;
+  transform-origin: bottom left; /* Change origin to bottom left */
 }
 
 @keyframes fadeInUp {
@@ -527,5 +527,135 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 2px 8px;
   border-radius: 4px;
   font-weight: 500;
+}
+
+/* Menu Button */
+.menu-container {
+  position: absolute;
+  bottom: 80px; /* Position above the add effect button */
+  right: 20px;
+  z-index: 1000;
+}
+
+.menu-button {
+  width: 48px;
+  height: 48px;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+}
+
+.menu-button:hover {
+  border-color: #dee2e6;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.menu-button.active {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.menu-button:active {
+  transform: translateY(0);
+}
+
+.menu-icon {
+  color: #495057;
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+/* Menu Dropdown */
+.menu-dropdown {
+  position: absolute;
+  bottom: calc(100% - 36px);
+  right: calc(100% + 12px); /* Position to the left of button */
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 200px;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  animation: fadeInUp 0.2s ease forwards;
+  transform-origin: bottom left; /* Change origin to bottom left */
+  z-index: 114514; /* Higher than add effect button */
+}
+
+.menu-dropdown-header {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.menu-dropdown-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.menu-dropdown-separator {
+  display: none;
+}
+
+.menu-dropdown-items {
+  padding: 4px;
+}
+
+.menu-dropdown-item {
+  width: 100%;
+  padding: 4px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #495057;
+  margin-bottom: 4px;
+}
+
+.menu-dropdown-item:last-child {
+  margin-bottom: 0;
+}
+
+.menu-dropdown-item:hover {
+  background: #f8f9fa;
+  color: #1a1a1a;
+}
+
+.menu-dropdown-item:active {
+  background: #e9ecef;
+}
+
+.menu-item-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.menu-item-icon {
+  width: 32px;
+  height: 32px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
 }
 
