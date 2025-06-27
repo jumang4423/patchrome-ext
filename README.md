@@ -1,6 +1,8 @@
-# ![Patchrome Logo](logo.png)
-
-# Patchrome
+<div align="center">
+  <img src="logo.png" alt="Patchrome Logo" />
+  
+  # Patchrome
+</div>
 
 A Chrome extension that brings modular audio effects processing to your browser. Build custom audio effect chains with a visual node-based interface and apply them to any audio/video content in real-time.
 
