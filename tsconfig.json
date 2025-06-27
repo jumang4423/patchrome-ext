@@ -3,7 +3,7 @@
     "target": "ES2020",
     "lib": ["ES2020", "DOM"],
     "jsx": "react",
-    "module": "commonjs",
+    "module": "ESNext",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -11,7 +11,10 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "noEmit": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

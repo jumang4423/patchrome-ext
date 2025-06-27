@@ -2,8 +2,8 @@
 
 export interface NodeData {
   id: string;
-  type: 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'output';
-  params: Record<string, number>;
+  type: 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'output';
+  params: Record<string, number | string>;
 }
 
 export interface EdgeData {

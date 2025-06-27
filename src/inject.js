@@ -322,6 +322,68 @@
         connections.push({ from: waveShaper, to: wetGain });
         connections.push({ from: wetGain, to: merger });
         connections.push({ from: dryGain, to: merger });
+      } else if (node.type === 'tonegenerator') {
+        // Create tone generator (oscillator)
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        // Set waveform type
+        const waveform = node.params.waveform || 'sine';
+        oscillator.type = waveform;
+        
+        // Set frequency
+        const frequency = node.params.frequency !== undefined ? node.params.frequency : 440;
+        oscillator.frequency.value = frequency;
+        
+        // Set volume (convert from dB to linear)
+        const volumeDb = node.params.volume !== undefined ? node.params.volume : -12;
+        const volumeLinear = Math.pow(10, volumeDb / 20);
+        gainNode.gain.value = volumeLinear;
+        
+        // Connect oscillator to gain
+        oscillator.connect(gainNode);
+        
+        // Start the oscillator
+        oscillator.start();
+        
+        nodes.set(node.id, {
+          type: 'tonegenerator',
+          input: null, // No input for tone generator
+          output: gainNode,
+          oscillator,
+          gainNode,
+          params: node.params,
+          audioContext
+        });
+      } else if (node.type === 'equalizer') {
+        // Create equalizer effect chain
+        const inputGain = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
+        
+        // Set filter type
+        const filterType = node.params.filterType || 'lowpass';
+        filter.type = filterType;
+        
+        // Set frequency
+        const frequency = node.params.frequency !== undefined ? node.params.frequency : 1000;
+        filter.frequency.value = frequency;
+        
+        // Set Q factor
+        const q = node.params.q !== undefined ? node.params.q : 1;
+        filter.Q.value = q;
+        
+        // Connect routing (no wet/dry mix for EQ)
+        inputGain.connect(filter);
+        
+        nodes.set(node.id, {
+          type: 'equalizer',
+          input: inputGain,
+          output: filter,
+          inputGain,
+          filter,
+          params: node.params,
+          audioContext
+        });
       } else if (node.type === 'output') {
         // Add a master gain to control overall volume
         const masterGain = audioContext.createGain();
@@ -358,6 +420,12 @@
           } else if (targetNode.type === 'distortion') {
             // Connect to distortion input
             sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'tonegenerator') {
+            // Tone generator has no input, skip connection
+            console.log('Patchrome: Warning - Cannot connect to tone generator input');
+          } else if (targetNode.type === 'equalizer') {
+            // Connect to equalizer input
+            sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
           }
@@ -376,6 +444,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'distortion') {
             // Connect reverb output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect reverb output to equalizer input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -396,6 +467,9 @@
           } else if (targetNode.type === 'distortion') {
             // Connect delay output to distortion input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect delay output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -414,6 +488,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'distortion') {
             // Connect utility output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect utility output to equalizer input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -434,6 +511,9 @@
           } else if (targetNode.type === 'distortion') {
             // Connect limiter output to distortion input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect limiter output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -452,6 +532,53 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'distortion') {
             // Connect distortion output to next distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect distortion output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'tonegenerator') {
+          if (targetNode.type === 'reverb') {
+            // Connect tone generator output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect tone generator output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect tone generator output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect tone generator output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect tone generator output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect tone generator output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'equalizer') {
+          if (targetNode.type === 'reverb') {
+            // Connect equalizer output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect equalizer output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect equalizer output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect equalizer output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect equalizer output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect equalizer output to next equalizer input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -646,6 +773,53 @@
         node.params = { ...graphNode.params };
         
         console.log(`Patchrome: Updated distortion ${nodeId} - drive: ${drive}%, wet: ${wetAmount}, dry: ${dryAmount}`);
+      } else if (node.type === 'tonegenerator' && node.oscillator && node.gainNode) {
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        
+        // Update waveform
+        const newWaveform = graphNode.params.waveform || 'sine';
+        const oldWaveform = node.params.waveform || 'sine';
+        if (newWaveform !== oldWaveform) {
+          node.oscillator.type = newWaveform;
+        }
+        
+        // Update frequency
+        const frequency = graphNode.params.frequency !== undefined ? graphNode.params.frequency : 440;
+        node.oscillator.frequency.setValueAtTime(frequency, currentTime);
+        
+        // Update volume
+        const volumeDb = graphNode.params.volume !== undefined ? graphNode.params.volume : -12;
+        const volumeLinear = Math.pow(10, volumeDb / 20);
+        node.gainNode.gain.setValueAtTime(volumeLinear, currentTime);
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated tonegenerator ${nodeId} - waveform: ${newWaveform}, freq: ${frequency}Hz, volume: ${volumeDb}dB`);
+      } else if (node.type === 'equalizer' && node.filter) {
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        
+        // Update filter type
+        const newFilterType = graphNode.params.filterType || 'lowpass';
+        const oldFilterType = node.params.filterType || 'lowpass';
+        if (newFilterType !== oldFilterType) {
+          node.filter.type = newFilterType;
+        }
+        
+        // Update frequency
+        const frequency = graphNode.params.frequency !== undefined ? graphNode.params.frequency : 1000;
+        node.filter.frequency.setValueAtTime(frequency, currentTime);
+        
+        // Update Q factor
+        const q = graphNode.params.q !== undefined ? graphNode.params.q : 1;
+        node.filter.Q.setValueAtTime(q, currentTime);
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated equalizer ${nodeId} - type: ${newFilterType}, freq: ${frequency}Hz, Q: ${q}`);
       }
     });
   }
@@ -703,6 +877,15 @@
       }
       if (node.waveShaper) {
         try { node.waveShaper.disconnect(); } catch(e) {}
+      }
+      if (node.oscillator) {
+        try { 
+          node.oscillator.disconnect(); 
+          node.oscillator.stop();
+        } catch(e) {}
+      }
+      if (node.filter) {
+        try { node.filter.disconnect(); } catch(e) {}
       }
       if (node.masterGain) {
         try { node.masterGain.disconnect(); } catch(e) {}

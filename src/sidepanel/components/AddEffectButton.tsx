@@ -54,11 +54,52 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
       
       {isOpen && (
         <div ref={menuRef} className="effect-dropdown">
-          <div className="effect-dropdown-header">
-            <span className="effect-dropdown-title">Add Effect</span>
-          </div>
-          <div className="effect-dropdown-separator" />
           <div className="effect-dropdown-items">
+            <div className="effect-section-label">Generators</div>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('tonegenerator')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon tonegenerator">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8C2 8 3 4 4 8C5 12 6 4 7 8C8 12 9 4 10 8C11 12 12 4 13 8C14 12 14 8 14 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <span>Tone Generator</span>
+              </div>
+            </button>
+            
+            <div className="effect-section-label">Effects</div>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('utility')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon utility">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 12V4M2 8H6M10 12V4M10 8H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <span>Utility</span>
+              </div>
+            </button>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('equalizer')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon equalizer">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 12V10M3 6V4M8 12V7M8 4V2M13 12V9M13 5V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="3" cy="8" r="2" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="8" cy="5.5" r="2" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="13" cy="7" r="2" stroke="currentColor" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+                <span>Equalizer</span>
+              </div>
+            </button>
             <button
               className="effect-dropdown-item"
               onClick={() => handleAddEffect('reverb')}
@@ -71,6 +112,21 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
                   </svg>
                 </div>
                 <span>Reverb</span>
+              </div>
+            </button>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('distortion')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon distortion">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1L1 8L8 15L15 8L8 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5 8L11 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 5L8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <span>Distortion</span>
               </div>
             </button>
             <button
@@ -88,19 +144,6 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
             </button>
             <button
               className="effect-dropdown-item"
-              onClick={() => handleAddEffect('utility')}
-            >
-              <div className="effect-item-content">
-                <div className="effect-item-icon utility">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 12V4M2 8H6M10 12V4M10 8H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <span>Utility</span>
-              </div>
-            </button>
-            <button
-              className="effect-dropdown-item"
               onClick={() => handleAddEffect('limiter')}
             >
               <div className="effect-item-content">
@@ -111,21 +154,6 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
                   </svg>
                 </div>
                 <span>Limiter</span>
-              </div>
-            </button>
-            <button
-              className="effect-dropdown-item"
-              onClick={() => handleAddEffect('distortion')}
-            >
-              <div className="effect-item-content">
-                <div className="effect-item-icon distortion">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 1L1 8L8 15L15 8L8 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M5 8L11 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M8 5L8 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <span>Distortion</span>
               </div>
             </button>
           </div>

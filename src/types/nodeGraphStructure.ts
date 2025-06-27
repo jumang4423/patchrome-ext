@@ -1,6 +1,6 @@
-export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'output';
-export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion';
-export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer';
+export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean' | 'speed' | 'waveform' | 'filtertype';
 
 export interface BaseNode {
   id: string;
@@ -17,7 +17,7 @@ export interface BaseParamConfig {
 }
 
 export interface SliderParamConfig extends BaseParamConfig {
-  valueType: 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan';
+  valueType: 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'speed';
   min: number;
   max: number;
   step: number;
@@ -27,7 +27,12 @@ export interface BooleanParamConfig extends BaseParamConfig {
   valueType: 'boolean';
 }
 
-export type ParamConfig = SliderParamConfig | BooleanParamConfig;
+export interface SelectParamConfig extends BaseParamConfig {
+  valueType: 'waveform' | 'filtertype';
+  options: string[];
+}
+
+export type ParamConfig = SliderParamConfig | BooleanParamConfig | SelectParamConfig;
 
 // input
 export interface InputNode extends BaseNode {
@@ -45,7 +50,7 @@ export const InputParamDOM: ParamConfig[] = [
      min: 0.5,
      max: 1.5,
      step: 0.01,
-     valueType: 'number'
+     valueType: 'speed'
   },
 ];
 
@@ -72,9 +77,9 @@ export const ReverbParamDOM: ParamConfig[] = [
   {
      label: 'Decay',
      key: 'decay', 
-     min: 100,
+     min: 10,
      max: 2000,
-     step: 10,
+     step: 1,
      valueType: 'milliseconds'
   },
   {
@@ -110,15 +115,15 @@ export const DelayParamDOM: ParamConfig[] = [
   {
      label: 'Delay Time',
      key: 'delayTime', 
-     min: 0,
+     min: 1,
      max: 1000,
-     step: 10,
+     step: 1,
      valueType: 'milliseconds'
   },
   {
      label: 'Feedback',
      key: 'feedback', 
-     min: 0,
+     min: 1,
      max: 100,
      step: 1,
      valueType: 'percentage'
@@ -209,6 +214,78 @@ export const DistortionParamDOM: ParamConfig[] = [
   }
 ];
 
+// tonegenerator
+export interface ToneGeneratorNode extends BaseNode {
+  type: 'tonegenerator';
+  data: {
+    waveform: string;
+    frequency: number;
+    volume: number;
+  };
+  deletable: true;
+}
+
+export const ToneGeneratorParamDOM: ParamConfig[] = [
+  {
+    label: 'Waveform',
+    key: 'waveform',
+    valueType: 'waveform',
+    options: ['sine', 'triangle', 'sawtooth', 'square']
+  },
+  {
+    label: 'Frequency',
+    key: 'frequency',
+    min: 20,
+    max: 20000,
+    step: 1,
+    valueType: 'number'
+  },
+  {
+    label: 'Volume',
+    key: 'volume',
+    min: -60,
+    max: 0,
+    step: 0.1,
+    valueType: 'decibels'
+  }
+];
+
+// equalizer
+export interface EqualizerNode extends BaseNode {
+  type: 'equalizer';
+  data: {
+    filterType: string;
+    frequency: number;
+    q: number;
+  };
+  deletable: true;
+}
+
+export const EqualizerParamDOM: ParamConfig[] = [
+  {
+    label: 'Filter Type',
+    key: 'filterType',
+    valueType: 'filtertype',
+    options: ['lowpass', 'highpass', 'bandpass', 'notch']
+  },
+  {
+    label: 'Frequency',
+    key: 'frequency',
+    min: 20,
+    max: 7777,
+    step: 1,
+    valueType: 'number'
+  },
+  {
+    label: 'Q Factor',
+    key: 'q',
+    min: 0.1,
+    max: 30,
+    step: 0.1,
+    valueType: 'number'
+  }
+];
+
 // output
 
 export interface OutputNode extends BaseNode {
@@ -219,7 +296,7 @@ export interface OutputNode extends BaseNode {
 
 export const OutputParamDOM: ParamConfig[] = [];
 
-export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | OutputNode;
 
 export interface Connection {
   id: string;

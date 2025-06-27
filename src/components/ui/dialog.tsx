@@ -52,14 +52,14 @@ const Dialog = React.forwardRef<
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         {/* Backdrop */}
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/30 backdrop-blur-md animate-in fade-in-0 duration-200"
           onClick={() => setOpen(false)}
         />
         {/* Modal */}
         <div
           ref={ref}
           className={cn(
-            "relative z-50 mx-4 bg-white rounded-2xl shadow-xl border border-gray-200",
+            "relative z-50 bg-white rounded-3xl shadow-2xl border border-gray-200/50 backdrop-blur-xl",
             className
           )}
           {...props}
@@ -103,11 +103,11 @@ const DialogContent = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("relative p-6", className)}
+      className={cn("relative p-4", className)}
       {...props}
     >
       <button
-        className="dialog-close-button"
+        className="absolute top-[6px] right-[8px] w-[20px] h-[20px] border-none bg-[#e9ecef] text-[#6c757d] cursor-pointer flex items-center justify-center rounded-full transition-all duration-200 p-0 hover:bg-[#dc3545] hover:text-white hover:scale-110 active:scale-95"
         onClick={() => setOpen(false)}
         aria-label="Close dialog"
       >

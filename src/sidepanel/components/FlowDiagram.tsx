@@ -91,6 +91,18 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           drive: node.data.drive ?? AUDIO_PARAM_DEFAULTS.distortion.drive,
           mix: node.data.mix ?? AUDIO_PARAM_DEFAULTS.distortion.mix
         };
+      } else if (node.data.type === 'tonegenerator') {
+        baseNode.params = { 
+          waveform: node.data.waveform ?? 'sine',
+          frequency: node.data.frequency ?? 440,
+          volume: node.data.volume ?? -12
+        };
+      } else if (node.data.type === 'equalizer') {
+        baseNode.params = { 
+          filterType: node.data.filterType ?? 'lowpass',
+          frequency: node.data.frequency ?? 1000,
+          q: node.data.q ?? 1
+        };
       }
       
       return baseNode;
@@ -123,7 +135,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
   }, [onGraphChange]);
 
   // Handler for node value changes
-  const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number) => {
+  const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number | string) => {
     console.log(`[FlowDiagram] handleNodeValueChange - NodeId: ${nodeId}, Key: ${key}, Value: ${value}`);
     
     setNodes((currentNodes) => {
@@ -274,6 +286,36 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             mix: node.params.mix ?? AUDIO_PARAM_DEFAULTS.distortion.mix,
             deletable: true,
             onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'tonegenerator') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'tonegenerator' as const,
+            waveform: node.params.waveform ?? 'sine',
+            frequency: node.params.frequency ?? 440,
+            volume: node.params.volume ?? -12,
+            deletable: true,
+            onChange: (key: string, value: number | string) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'equalizer') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'equalizer' as const,
+            filterType: node.params.filterType ?? 'lowpass',
+            frequency: node.params.frequency ?? 1000,
+            q: node.params.q ?? 1,
+            deletable: true,
+            onChange: (key: string, value: number | string) => {
               handleNodeValueChange(node.id, key, value);
             },
             onRemove: () => handleRemoveNode(node.id)
@@ -561,6 +603,68 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           ...AUDIO_PARAM_DEFAULTS.distortion,
           deletable: true,
           onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'tonegenerator') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'tonegenerator' as const,
+          waveform: 'sine',
+          frequency: 440,
+          volume: -12,
+          deletable: true,
+          onChange: (key: string, value: number | string) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'equalizer') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'equalizer' as const,
+          filterType: 'lowpass',
+          frequency: 1000,
+          q: 1,
+          deletable: true,
+          onChange: (key: string, value: number | string) => {
             handleNodeValueChange(newNodeId, key, value);
           },
           onRemove: () => handleRemoveNode(newNodeId)

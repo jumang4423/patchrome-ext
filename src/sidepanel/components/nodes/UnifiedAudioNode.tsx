@@ -1,7 +1,14 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
+import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
 import { Switch } from '../../../components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/select';
 import { cn } from '../../../lib/utils';
 import { AUDIO_PARAM_DEFAULTS } from '../../../constants/audioDefaults';
 
@@ -54,6 +61,20 @@ const nodeIcons = {
       <path d="M12 8L12 16" stroke="#f39c12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
+  tonegenerator: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 12C3 12 5 6 7 12C9 18 11 6 13 12C15 18 17 6 19 12C21 18 21 12 21 12" stroke="#00d2d3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="12" cy="12" r="10" stroke="#00d2d3" strokeWidth="2" fill="none"/>
+    </svg>
+  ),
+  equalizer: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 18V14M4 10V6M12 18V11M12 7V2M20 18V13M20 9V4" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="4" cy="12" r="2" stroke="#3498db" strokeWidth="2" fill="none"/>
+      <circle cx="12" cy="9" r="2" stroke="#3498db" strokeWidth="2" fill="none"/>
+      <circle cx="20" cy="11" r="2" stroke="#3498db" strokeWidth="2" fill="none"/>
+    </svg>
+  ),
   output: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="#4caf50"/>
@@ -68,6 +89,8 @@ const nodeHeaders = {
   utility: 'Utility',
   limiter: 'Limiter',
   distortion: 'Distortion',
+  tonegenerator: 'Tone Generator',
+  equalizer: 'Equalizer',
   output: 'Audio Output'
 };
 
@@ -85,6 +108,10 @@ const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
       return LimiterParamDOM;
     case 'distortion':
       return DistortionParamDOM;
+    case 'tonegenerator':
+      return ToneGeneratorParamDOM;
+    case 'equalizer':
+      return EqualizerParamDOM;
     case 'output':
       return OutputParamDOM;
     default:
@@ -92,7 +119,7 @@ const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
   }
 };
 
-const formatValue = (value: number, valueType: ValueType) => {
+const formatValue = (value: number, valueType: ValueType, paramKey?: string) => {
   if (valueType === 'percentage') {
     return `${value}%`;
   } else if (valueType === 'milliseconds') {
@@ -110,6 +137,10 @@ const formatValue = (value: number, valueType: ValueType) => {
     } else {
       return `${value}R`;
     }
+  } else if (valueType === 'speed') {
+    return `${value.toFixed(2)}x`;
+  } else if (valueType === 'number' && paramKey === 'frequency') {
+    return `${value}Hz`;
   }
   return value.toFixed(2);
 };
@@ -117,8 +148,10 @@ const formatValue = (value: number, valueType: ValueType) => {
 const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNodeProps) => {
   const { type, onChange, deletable } = data;
   const paramDOM = getParamDOM(type);
-  const hasLeftHandle = type !== 'input';
+  const hasLeftHandle = type !== 'input' && type !== 'tonegenerator';
   const hasRightHandle = type !== 'output';
+  const [editingParam, setEditingParam] = React.useState<string | null>(null);
+  const [tempValue, setTempValue] = React.useState<string>('');
 
   const handleChange = (key: string, valueType: ValueType) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
@@ -149,6 +182,144 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
     }
   };
 
+  const handleSliderDoubleClick = (key: string, currentValue: number) => {
+    setEditingParam(key);
+    setTempValue(currentValue.toString());
+  };
+
+  const handleInputSubmit = (key: string, param: ParamConfig) => {
+    const numValue = parseFloat(tempValue);
+    if (!isNaN(numValue) && 'min' in param && 'max' in param) {
+      const clampedValue = Math.max(param.min, Math.min(param.max, numValue));
+      if (onChange) {
+        onChange(key, clampedValue);
+      }
+    }
+    setEditingParam(null);
+    setTempValue('');
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent, key: string, param: ParamConfig) => {
+    if (e.key === 'Enter') {
+      handleInputSubmit(key, param);
+    } else if (e.key === 'Escape') {
+      setEditingParam(null);
+      setTempValue('');
+    }
+  };
+
+  // Filter visualization for equalizer
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (type !== 'equalizer' || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw grid
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 0.5;
+    
+    // Horizontal grid lines
+    for (let i = 0; i <= 4; i++) {
+      const y = (height / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    // Vertical grid lines
+    for (let i = 0; i <= 4; i++) {
+      const x = (width / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
+    // Calculate filter response
+    const filterType = data.filterType || 'lowpass';
+    const frequency = data.frequency || 1000;
+    const q = data.q || 1;
+
+    // Draw frequency response curve
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    for (let x = 0; x < width; x++) {
+      // Map x to frequency (20Hz to 20kHz logarithmic)
+      const freq = 20 * Math.pow(1000, x / width);
+      
+      // Calculate normalized frequency (0 to 1, where 1 is Nyquist)
+      const normalizedFreq = freq / 22050;
+      
+      // Simple visualization based on filter type
+      let y = height / 2; // Default center line
+      const centerFreq = frequency / 22050;
+      const bandwidth = 1 / q;
+      
+      if (filterType === 'lowpass') {
+        if (normalizedFreq < centerFreq) {
+          y = height / 2;
+        } else {
+          const rolloff = Math.min(1, (normalizedFreq - centerFreq) / (bandwidth * centerFreq));
+          y = height / 2 + rolloff * (height / 2) * 0.8;
+        }
+      } else if (filterType === 'highpass') {
+        if (normalizedFreq > centerFreq) {
+          y = height / 2;
+        } else {
+          const rolloff = Math.min(1, (centerFreq - normalizedFreq) / (bandwidth * centerFreq));
+          y = height / 2 + rolloff * (height / 2) * 0.8;
+        }
+      } else if (filterType === 'bandpass') {
+        const distance = Math.abs(normalizedFreq - centerFreq) / (bandwidth * centerFreq);
+        if (distance < 1) {
+          y = height / 2 - (1 - distance) * (height / 2) * 0.6;
+        } else {
+          y = height / 2 + Math.min(distance - 1, 1) * (height / 2) * 0.4;
+        }
+      } else if (filterType === 'notch') {
+        const distance = Math.abs(normalizedFreq - centerFreq) / (bandwidth * centerFreq);
+        if (distance < 1) {
+          y = height / 2 + (1 - distance) * (height / 2) * 0.6;
+        } else {
+          y = height / 2;
+        }
+      }
+      
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    
+    ctx.stroke();
+
+    // Draw center frequency marker
+    const centerX = Math.log(frequency / 20) / Math.log(1000) * width;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(centerX, 0);
+    ctx.lineTo(centerX, height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }, [type, data.filterType, data.frequency, data.q]);
+
   return (
     <div className={`custom-node ${selected ? 'selected' : ''}`}>
       {hasLeftHandle && (
@@ -178,6 +349,17 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
         )}
       </div>
       
+      {type === 'equalizer' && (
+        <div className="equalizer-visualization rounded-xl mx-3 mt-2">
+          <canvas 
+            ref={canvasRef} 
+            width={240} 
+            height={100}
+            className="equalizer-canvas rounded-xl mt-4"
+          />
+        </div>
+      )}
+      
       {paramDOM.length > 0 && (
         <div className="node-content">
           {paramDOM.map((param) => {
@@ -203,12 +385,43 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                   </div>
                 </div>
               );
+            } else if ((param.valueType === 'waveform' || param.valueType === 'filtertype') && 'options' in param) {
+              // Render dropdown for waveform or filter type selection
+              const value = data[param.key] as string || (param.valueType === 'waveform' ? 'sine' : 'lowpass');
+              
+              return (
+                <div key={param.key} style={{ marginBottom: '16px' }}>
+                  <label className="node-label">
+                    <span>{param.label}</span>
+                  </label>
+                  <div className="node-select-container nodrag">
+                    <Select
+                      value={value}
+                      onValueChange={(newValue) => {
+                        if (onChange) {
+                          onChange(param.key, newValue as any);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="node-select">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {param.options.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option.charAt(0).toUpperCase() + option.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              );
             } else {
               // Render slider for numeric parameters
               const value = data[param.key] as number;
-              const displayValue = param.valueType === 'number' 
-                ? `${formatValue(value, param.valueType as ValueType)}`
-                : formatValue(value, param.valueType as ValueType);
+              const displayValue = formatValue(value, param.valueType as ValueType, param.key);
+              const isEditing = editingParam === param.key;
               
               return (
                 <div key={param.key} style={{ marginBottom: '16px' }}>
@@ -217,21 +430,31 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                     <span style={{ color: '#868e96', fontWeight: 'normal' }}>({displayValue})</span>
                   </label>
                   <div className="node-slider-container nodrag">
-                    <input
-                      type="range"
-                      min={'min' in param ? param.min : 0}
-                      max={'max' in param ? param.max : 100}
-                      step={'step' in param ? param.step : 1}
-                      value={value}
-                      onChange={handleChange(param.key, param.valueType as ValueType)}
-                      onDoubleClick={() => {
-                        const defaultValue = AUDIO_PARAM_DEFAULTS[type]?.[param.key as keyof typeof AUDIO_PARAM_DEFAULTS[typeof type]];
-                        if (defaultValue !== undefined && onChange) {
-                          onChange(param.key, defaultValue as number);
-                        }
-                      }}
-                      className="node-slider"
-                    />
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        value={tempValue}
+                        onChange={(e) => setTempValue(e.target.value)}
+                        onKeyDown={(e) => handleInputKeyDown(e, param.key, param)}
+                        onBlur={() => handleInputSubmit(param.key, param)}
+                        autoFocus
+                        className="node-input"
+                        min={'min' in param ? param.min : 0}
+                        max={'max' in param ? param.max : 100}
+                        step={'step' in param ? param.step : 1}
+                      />
+                    ) : (
+                      <input
+                        type="range"
+                        min={'min' in param ? param.min : 0}
+                        max={'max' in param ? param.max : 100}
+                        step={'step' in param ? param.step : 1}
+                        value={value}
+                        onChange={handleChange(param.key, param.valueType as ValueType)}
+                        onDoubleClick={() => handleSliderDoubleClick(param.key, value)}
+                        className="node-slider"
+                      />
+                    )}
                   </div>
                 </div>
               );
