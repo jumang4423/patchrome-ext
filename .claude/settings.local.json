@@ -7,7 +7,8 @@
       "Bash(ls:*)",
       "Bash(convert:*)",
       "Bash(sips:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "mcp__sequential-thinking__sequentialthinking"
     ],
     "deny": []
   }

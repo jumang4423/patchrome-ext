@@ -1,5 +1,5 @@
-export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'output';
-export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate';
 export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean' | 'speed' | 'waveform' | 'filtertype';
 
 export interface BaseNode {
@@ -389,6 +389,26 @@ export const FlangerParamDOM: ParamConfig[] = [
   }
 ];
 
+// spectralgate
+export interface SpectralGateNode extends BaseNode {
+  type: 'spectralgate';
+  data: {
+    cutoff: number;
+  };
+  deletable: true;
+}
+
+export const SpectralGateParamDOM: ParamConfig[] = [
+  {
+    label: 'Cutoff',
+    key: 'cutoff',
+    min: -60,
+    max: 24,
+    step: 0.1,
+    valueType: 'decibels'
+  }
+];
+
 // output
 
 export interface OutputNode extends BaseNode {
@@ -399,7 +419,7 @@ export interface OutputNode extends BaseNode {
 
 export const OutputParamDOM: ParamConfig[] = [];
 
-export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | SpectralGateNode | OutputNode;
 
 export interface Connection {
   id: string;

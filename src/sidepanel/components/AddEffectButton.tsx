@@ -184,6 +184,20 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
                 <span>Limiter</span>
               </div>
             </button>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('spectralgate')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon spectralgate">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 14V8M4 14V6M6 14V10M8 14V4M10 14V7M12 14V5M14 14V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 2H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 2"/>
+                  </svg>
+                </div>
+                <span>Spectral Gate</span>
+              </div>
+            </button>
           </div>
         </div>
       )}

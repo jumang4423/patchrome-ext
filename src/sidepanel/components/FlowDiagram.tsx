@@ -120,6 +120,10 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           delay: node.data.delay !== undefined ? node.data.delay : 5,
           mix: node.data.mix || 0
         };
+      } else if (node.data.type === 'spectralgate') {
+        baseNode.params = { 
+          cutoff: node.data.cutoff !== undefined ? node.data.cutoff : -20
+        };
       }
       
       return baseNode;
@@ -363,6 +367,19 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             feedback: node.params.feedback !== undefined ? node.params.feedback : 0,
             delay: node.params.delay !== undefined ? node.params.delay : 5,
             mix: node.params.mix || 0,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'spectralgate') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'spectralgate' as const,
+            cutoff: node.params.cutoff !== undefined ? node.params.cutoff : -20,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -788,6 +805,39 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
         const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'spectralgate') {
+      console.log('Patchrome Sidepanel: Adding spectral gate node');
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'spectralgate' as const,
+          cutoff: -20,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            console.log(`Patchrome Sidepanel: Spectral gate ${newNodeId} param changed - ${key}: ${value}`);
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      console.log('Patchrome Sidepanel: Created spectral gate node:', newNode);
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        console.log('Patchrome Sidepanel: Updated nodes with spectral gate:', updated);
         saveToLocalStorage(updated, edges);
         return updated;
       });

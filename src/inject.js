@@ -2,6 +2,8 @@
 (function() {
   'use strict';
   
+  console.log('Patchrome: inject.js loaded!');
+  
   let settings = {
     enabled: true,
     speed: 1.0,
@@ -16,6 +18,9 @@
       ]
     }
   };
+  
+  // Store the worklet URL (will be set by content script)
+  let spectralGateWorkletUrl = null;
   
   // Keep track of processed elements
   const processedElements = new WeakSet();
@@ -75,7 +80,7 @@
   }
   
   // Build audio graph from node graph
-  function buildAudioGraph(audioContext, source, nodeGraph, customDestination) {
+  async function buildAudioGraph(audioContext, source, nodeGraph, customDestination) {
     const nodes = new Map();
     const connections = [];
     
@@ -87,7 +92,7 @@
     }
     
     // Create audio nodes based on graph nodes
-    nodeGraph.nodes.forEach(node => {
+    for (const node of nodeGraph.nodes) {
       if (node.type === 'input') {
         nodes.set(node.id, {
           type: 'input',
@@ -549,6 +554,74 @@
         // Store internal connections
         connections.push({ from: wetGain, to: merger });
         connections.push({ from: dryGain, to: merger });
+      } else if (node.type === 'spectralgate') {
+        // Create spectral gate effect using AudioWorklet
+        const inputGain = audioContext.createGain();
+        const merger = audioContext.createGain();
+        
+        // Try to create AudioWorkletNode
+        let spectralGateNode = null;
+        
+        console.log('Patchrome: Starting spectral gate setup...');
+        console.log('Patchrome: AudioContext state:', audioContext.state);
+        console.log('Patchrome: Saved worklet URL:', spectralGateWorkletUrl);
+        
+        // Check if AudioWorklet is supported
+        if (audioContext.audioWorklet) {
+          console.log('Patchrome: AudioWorklet is supported');
+          
+          try {
+            // Use the worklet URL passed from content script
+            if (!spectralGateWorkletUrl) {
+              console.error('Patchrome: No worklet URL available! Cannot create spectral gate.');
+              throw new Error('No worklet URL available');
+            }
+            
+            console.log('Patchrome: Loading worklet from:', spectralGateWorkletUrl);
+            
+            await audioContext.audioWorklet.addModule(spectralGateWorkletUrl);
+            console.log('Patchrome: Worklet module loaded successfully');
+            
+            // Create the AudioWorkletNode
+            spectralGateNode = new AudioWorkletNode(audioContext, 'spectral-gate-processor');
+            console.log('Patchrome: SpectralGateNode created:', spectralGateNode);
+            
+            // Set cutoff parameter (already in dB)
+            const cutoffValue = node.params.cutoff !== undefined ? node.params.cutoff : -20;
+            const cutoffParam = spectralGateNode.parameters.get('cutoff');
+            console.log('Patchrome: Cutoff parameter:', cutoffParam, 'setting to:', cutoffValue);
+            
+            if (cutoffParam) {
+              cutoffParam.value = cutoffValue;
+            } else {
+              console.error('Patchrome: No cutoff parameter found on worklet!');
+            }
+            
+            // Connect routing
+            inputGain.connect(spectralGateNode);
+            spectralGateNode.connect(merger);
+            console.log('Patchrome: Spectral gate connected in audio graph');
+          } catch (e) {
+            console.error('Patchrome: Failed to create spectral gate worklet:', e);
+            console.error('Patchrome: Error stack:', e.stack);
+            // Fallback: connect directly
+            inputGain.connect(merger);
+          }
+        } else {
+          console.warn('Patchrome: AudioWorklet not supported, spectral gate bypassed');
+          inputGain.connect(merger);
+        }
+        
+        nodes.set(node.id, {
+          type: 'spectralgate',
+          input: inputGain,
+          output: merger,
+          inputGain,
+          merger,
+          spectralGateNode,
+          params: node.params,
+          audioContext
+        });
       } else if (node.type === 'output') {
         // Add a master gain to control overall volume
         const masterGain = audioContext.createGain();
@@ -561,7 +634,7 @@
           masterGain: masterGain
         });
       }
-    });
+    }
     
     // Connect nodes based on edges
     nodeGraph.edges.forEach(edge => {
@@ -597,6 +670,10 @@
           } else if (targetNode.type === 'flanger') {
             // Connect to flanger input
             sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect to spectral gate input
+            console.log(`Patchrome: Connecting input to spectral gate ${edge.target}`);
+            sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
           }
@@ -624,6 +701,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'flanger') {
             // Connect reverb output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect reverb output to spectral gate input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -653,6 +733,9 @@
           } else if (targetNode.type === 'flanger') {
             // Connect delay output to flanger input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect delay output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -680,6 +763,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'flanger') {
             // Connect utility output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect utility output to spectral gate input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -709,6 +795,9 @@
           } else if (targetNode.type === 'flanger') {
             // Connect limiter output to flanger input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect limiter output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -736,6 +825,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'flanger') {
             // Connect distortion output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect distortion output to spectral gate input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -765,6 +857,9 @@
           } else if (targetNode.type === 'flanger') {
             // Connect tone generator output to flanger input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect tonegenerator output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -792,6 +887,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'flanger') {
             // Connect equalizer output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect equalizer output to spectral gate input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -821,6 +919,9 @@
           } else if (targetNode.type === 'flanger') {
             // Connect phaser output to flanger input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect phaser output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -849,7 +950,43 @@
           } else if (targetNode.type === 'flanger') {
             // Connect flanger output to next flanger input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect flanger output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'spectralgate') {
+          console.log(`Patchrome: Connecting spectral gate ${edge.source} to ${targetNode.type} ${edge.target}`);
+          if (targetNode.type === 'reverb') {
+            // Connect spectral gate output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect spectral gate output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect spectral gate output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect spectral gate output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect spectral gate output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect spectral gate output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect spectral gate output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect spectral gate output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect spectral gate output to next spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            console.log('Patchrome: Connecting spectral gate to output');
             sourceNode.output.connect(targetNode.audioNode);
           }
         }
@@ -1130,6 +1267,29 @@
         node.params = { ...graphNode.params };
         
         console.log(`Patchrome: Updated flanger ${nodeId} - mix: ${wetAmount}, rate: ${rate}, delay: ${baseDelay}, depth: ${depth}, feedback: ${feedbackAmount}`);
+      } else if (node.type === 'spectralgate') {
+        console.log(`Patchrome: Updating spectral gate ${nodeId}, node:`, node);
+        
+        if (node.spectralGateNode) {
+          // Update cutoff parameter
+          const cutoffValue = graphNode.params.cutoff !== undefined ? graphNode.params.cutoff : -20;
+          
+          // Use setValueAtTime for immediate parameter changes
+          const currentTime = audioContexts.get(element)?.currentTime || 0;
+          const cutoffParam = node.spectralGateNode.parameters.get('cutoff');
+          
+          if (cutoffParam) {
+            cutoffParam.setValueAtTime(cutoffValue, currentTime);
+            console.log(`Patchrome: Updated spectralgate ${nodeId} - cutoff: ${cutoffValue}dB`);
+          } else {
+            console.error('Patchrome: No cutoff parameter on spectral gate node!');
+          }
+        } else {
+          console.warn(`Patchrome: No spectralGateNode found for ${nodeId}, likely using fallback`);
+        }
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
       }
     });
   }
@@ -1217,6 +1377,9 @@
           try { filter.disconnect(); } catch(e) {}
         });
       }
+      if (node.spectralGateNode) {
+        try { node.spectralGateNode.disconnect(); } catch(e) {}
+      }
       if (node.masterGain) {
         try { node.masterGain.disconnect(); } catch(e) {}
       }
@@ -1227,7 +1390,7 @@
   }
   
   // Setup audio processing for media element
-  function setupAudioProcessing(element, forceRebuild = false) {
+  async function setupAudioProcessing(element, forceRebuild = false) {
     const hasExistingContext = audioContexts.has(element);
     
     if (hasExistingContext && !forceRebuild) {
@@ -1252,7 +1415,7 @@
       
       if (source) {
         // Rebuild audio graph with existing source
-        const audioNodes = buildAudioGraph(audioContext, source, settings.audioGraph);
+        const audioNodes = await buildAudioGraph(audioContext, source, settings.audioGraph);
         audioGraphs.set(element, audioNodes);
       }
       return;
@@ -1266,7 +1429,7 @@
       const source = audioContext.createMediaElementSource(element);
       
       // Build audio graph
-      const audioNodes = buildAudioGraph(audioContext, source, settings.audioGraph);
+      const audioNodes = await buildAudioGraph(audioContext, source, settings.audioGraph);
       
       // Store references
       audioContexts.set(element, audioContext);
@@ -1367,6 +1530,13 @@
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'PATCHROME_SETTINGS') {
       console.log('[Inject] Received PATCHROME_SETTINGS:', event.data.settings);
+      
+      // Save the worklet URL if provided
+      if (event.data.workletUrl) {
+        console.log('[Inject] Received worklet URL:', event.data.workletUrl);
+        spectralGateWorkletUrl = event.data.workletUrl;
+      }
+      
       const newSettings = event.data.settings;
       let needsRebuild = false;
       
@@ -1491,7 +1661,7 @@
         
         // Create a proxy source that intercepts connections
         const proxySource = {
-          connect: function(destination) {
+          connect: async function(destination) {
             // Clean up any existing connection
             const existingConnection = sourceConnections.get(source);
             if (existingConnection) {
@@ -1519,7 +1689,7 @@
             disconnectAudioGraph(mediaElement);
             
             // Build dynamic audio graph with custom destination
-            const audioNodes = buildAudioGraph(ctx, source, settings.audioGraph, destination);
+            const audioNodes = await buildAudioGraph(ctx, source, settings.audioGraph, destination);
             audioGraphs.set(mediaElement, audioNodes);
             
             // Ensure pitch settings are applied

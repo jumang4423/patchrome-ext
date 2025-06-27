@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, PhaserParamDOM, FlangerParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
+import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, PhaserParamDOM, FlangerParamDOM, SpectralGateParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
 import { Switch } from '../../../components/ui/switch';
 import {
   Select,
@@ -87,6 +87,12 @@ const nodeIcons = {
       <path d="M5 12C5 12 7 9 9 12C11 15 13 9 15 12C17 15 19 12 19 12" stroke="#74b9ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" strokeDasharray="3 3"/>
     </svg>
   ),
+  spectralgate: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 20V13M6 20V10M9 20V15M12 20V6M15 20V11M18 20V8M21 20V14" stroke="#00d2d3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M3 4H21" stroke="#00d2d3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 3"/>
+    </svg>
+  ),
   output: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="#4caf50"/>
@@ -105,6 +111,7 @@ const nodeHeaders = {
   equalizer: 'Equalizer',
   phaser: 'Phaser',
   flanger: 'Flanger',
+  spectralgate: 'Spectral Gate',
   output: 'Audio Output'
 };
 
@@ -130,6 +137,8 @@ const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
       return PhaserParamDOM;
     case 'flanger':
       return FlangerParamDOM;
+    case 'spectralgate':
+      return SpectralGateParamDOM;
     case 'output':
       return OutputParamDOM;
     default:

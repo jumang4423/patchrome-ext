@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patchrome Spectral Gate Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .instructions {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2196F3;
+        }
+        .console-section {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .audio-controls {
+            margin: 20px 0;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.playing {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+        .status.stopped {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+        audio {
+            width: 100%;
+            margin-top: 20px;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Patchrome Spectral Gate Test Page</h1>
+        
+        <div class="instructions">
+            <h2>Testing Instructions:</h2>
+            <ol>
+                <li><strong>Open Developer Console</strong> (F12 or Cmd+Option+I) to see Patchrome logs</li>
+                <li><strong>Open Patchrome sidepanel</strong> and add a Spectral Gate effect</li>
+                <li><strong>Connect the nodes</strong>: Input → Spectral Gate → Output</li>
+                <li><strong>Play the test audio</strong> below and check the console for processing logs</li>
+                <li><strong>Adjust the cutoff parameter</strong> in the sidepanel and observe the logs</li>
+            </ol>
+        </div>
+
+        <div class="highlight">
+            <strong>Important:</strong> The audio processing happens in THIS page's context, not in the extension panels. 
+            Look for "Patchrome:" logs in THIS page's console.
+        </div>
+
+        <div class="audio-controls">
+            <h3>Test Audio Sources:</h3>
+            
+            <button id="playWhiteNoise">Play White Noise</button>
+            <button id="playSineWave">Play 440Hz Sine Wave</button>
+            <button id="playMusic">Play Music Sample</button>
+            <button id="stopAll">Stop All</button>
+            
+            <div id="status" class="status stopped">Audio Stopped</div>
+        </div>
+
+        <h3>Or use this audio element:</h3>
+        <audio controls id="audioElement">
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+
+        <div class="console-section" id="console">
+            <div style="color: #666;">Console output will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        // Override console.log to display in our console section
+        const consoleDiv = document.getElementById('console');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToConsole(message, type = 'log') {
+            const color = type === 'error' ? '#d32f2f' : type === 'warn' ? '#f57c00' : '#333';
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.style.color = color;
+            entry.style.marginBottom = '5px';
+            entry.innerHTML = `<span style="color: #999">[${timestamp}]</span> ${message}`;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            if (message.includes('Patchrome')) {
+                addToConsole(message, 'log');
+            }
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            if (message.includes('Patchrome')) {
+                addToConsole(message, 'error');
+            }
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            if (message.includes('Patchrome')) {
+                addToConsole(message, 'warn');
+            }
+        };
+
+        // Audio test functionality
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let currentSource = null;
+        const statusDiv = document.getElementById('status');
+
+        function updateStatus(playing) {
+            statusDiv.textContent = playing ? 'Audio Playing' : 'Audio Stopped';
+            statusDiv.className = playing ? 'status playing' : 'status stopped';
+        }
+
+        function stopCurrentSource() {
+            if (currentSource) {
+                if (currentSource.stop) {
+                    currentSource.stop();
+                } else if (currentSource.pause) {
+                    currentSource.pause();
+                }
+                currentSource = null;
+                updateStatus(false);
+            }
+        }
+
+        // White noise generator
+        document.getElementById('playWhiteNoise').addEventListener('click', () => {
+            stopCurrentSource();
+            const bufferSize = 2 * audioContext.sampleRate; // 2 seconds
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const output = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.loop = true;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            currentSource = source;
+            updateStatus(true);
+            console.log('Playing white noise - check if spectral gate is processing');
+        });
+
+        // Sine wave generator
+        document.getElementById('playSineWave').addEventListener('click', () => {
+            stopCurrentSource();
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            
+            currentSource = oscillator;
+            updateStatus(true);
+            console.log('Playing 440Hz sine wave - check if spectral gate is processing');
+        });
+
+        // Music sample
+        document.getElementById('playMusic').addEventListener('click', () => {
+            const audio = document.getElementById('audioElement');
+            audio.play();
+            currentSource = audio;
+            updateStatus(true);
+            console.log('Playing music sample - check if spectral gate is processing');
+        });
+
+        // Stop all
+        document.getElementById('stopAll').addEventListener('click', () => {
+            stopCurrentSource();
+            document.getElementById('audioElement').pause();
+            console.log('Stopped all audio');
+        });
+
+        // Monitor audio element
+        document.getElementById('audioElement').addEventListener('play', () => {
+            currentSource = document.getElementById('audioElement');
+            updateStatus(true);
+        });
+
+        document.getElementById('audioElement').addEventListener('pause', () => {
+            if (currentSource === document.getElementById('audioElement')) {
+                updateStatus(false);
+            }
+        });
+
+        // Initial log
+        console.log('Patchrome test page loaded. Waiting for audio to play...');
+    </script>
+</body>
+</html>

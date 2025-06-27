@@ -24,6 +24,32 @@ export const AUDIO_PARAM_DEFAULTS = {
     drive: 50,
     mix: 50
   },
+  tonegenerator: {
+    waveform: 'sine',
+    frequency: 440,
+    volume: -12
+  },
+  equalizer: {
+    filterType: 'lowpass',
+    frequency: 1000,
+    q: 1
+  },
+  phaser: {
+    rate: 1,
+    depth: 50,
+    feedback: 50,
+    mix: 50
+  },
+  flanger: {
+    rate: 0.5,
+    depth: 50,
+    feedback: 50,
+    delay: 5,
+    mix: 50
+  },
+  spectralgate: {
+    cutoff: -40
+  },
   output: {}
 } as const;
 
