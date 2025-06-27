@@ -3,7 +3,11 @@
     "allow": [
       "mcp__workbeep-mcp__play_start_agent_sound",
       "Bash(grep:*)",
-      "mcp__workbeep-mcp__play_finish_agent_sound"
+      "mcp__workbeep-mcp__play_finish_agent_sound",
+      "Bash(ls:*)",
+      "Bash(convert:*)",
+      "Bash(sips:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }
