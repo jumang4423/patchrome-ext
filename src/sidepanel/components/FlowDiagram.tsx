@@ -21,6 +21,7 @@ import 'reactflow/dist/style.css';
 import UnifiedAudioNode from './nodes/UnifiedAudioNode';
 import MaxStyleEdge from './edges/MaxStyleEdge';
 import AddEffectButton from './AddEffectButton';
+import AddEffectDialog from './AddEffectDialog';
 import MenuButton from './MenuButton';
 import InfoModal from './InfoModal';
 import LogoButton from './LogoButton';
@@ -54,6 +55,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
   const [isInitialized, setIsInitialized] = React.useState(false);
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = React.useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = React.useState(false);
+  const [isEffectDialogOpen, setIsEffectDialogOpen] = React.useState(false);
   
   // Helper function to save current state to localStorage
   const saveToLocalStorage = useCallback((nodesList: Node[], edgesList: Edge[]) => {
@@ -920,12 +922,21 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     });
   }, [isInitialized, setNodes, handleRemoveNode]);
 
+  // Handle right-click on the canvas
+  const handleContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    setIsEffectDialogOpen(true);
+  }, []);
+
   return (
-    <div style={{ 
-      height: '100%', 
-      width: '100%',
-      position: 'relative',
-    }}>
+    <div 
+      style={{ 
+        height: '100%', 
+        width: '100%',
+        position: 'relative',
+      }}
+      onContextMenu={handleContextMenu}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -941,8 +952,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
       <LogoButton onClick={() => onEnabledChange(!isEnabled)} isActive={isEnabled} />
-      <AddEffectButton onAddEffect={handleAddEffect} />
+      <AddEffectButton onClick={() => setIsEffectDialogOpen(true)} />
       <MenuButton onAction={handleMenuAction} onInfoClick={() => setIsInfoModalOpen(true)} />
+      <AddEffectDialog 
+        open={isEffectDialogOpen} 
+        onOpenChange={setIsEffectDialogOpen}
+        onAddEffect={handleAddEffect}
+      />
       <InfoModal 
         open={isInfoModalOpen} 
         onOpenChange={setIsInfoModalOpen} 

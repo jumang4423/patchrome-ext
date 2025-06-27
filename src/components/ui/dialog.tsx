@@ -59,7 +59,7 @@ const Dialog = React.forwardRef<
         <div
           ref={ref}
           className={cn(
-            "relative z-50 bg-white rounded-3xl shadow-2xl border border-gray-200/50 backdrop-blur-xl",
+            "relative z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-200",
             className
           )}
           {...props}
@@ -103,16 +103,16 @@ const DialogContent = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("relative p-4", className)}
+      className={cn("relative p-6", className)}
       {...props}
     >
       <button
-        className="absolute top-[6px] right-[8px] w-[20px] h-[20px] border-none bg-[#e9ecef] text-[#6c757d] cursor-pointer flex items-center justify-center rounded-full transition-all duration-200 p-0 hover:bg-[#dc3545] hover:text-white hover:scale-110 active:scale-95"
+        className="absolute top-[12px] right-[12px] w-[24px] h-[24px] border-none bg-[#e5e5e7] text-[#8e8e93] cursor-pointer flex items-center justify-center rounded-full transition-all duration-200 p-0 hover:bg-[#d1d1d6] hover:text-[#636366] active:scale-95"
         onClick={() => setOpen(false)}
         aria-label="Close dialog"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       </button>
       {children}
@@ -128,7 +128,7 @@ const DialogHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left mb-4",
+      "flex flex-col space-y-1.5 text-center mb-6 pb-4 border-b border-gray-200",
       className
     )}
     {...props}
@@ -143,7 +143,7 @@ const DialogTitle = React.forwardRef<
   <h2
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight text-gray-900",
+      "text-xl font-semibold leading-none tracking-tight text-gray-900",
       className
     )}
     {...props}

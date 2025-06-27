@@ -992,3 +992,206 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #6c757d;
 }
 
+/* Add Effect Dialog Styles - macOS Settings UI Style */
+.effect-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #f6f6f7;
+  border-radius: 12px;
+  margin: -16px;
+}
+
+/* Custom scrollbar for macOS feel */
+.effect-dialog-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.effect-dialog-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.effect-dialog-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.effect-dialog-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.effect-category {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e7;
+}
+
+.effect-category:last-child {
+  border-bottom: none;
+}
+
+.effect-category-header {
+  padding: 16px 20px 12px;
+  background: #f6f6f7;
+  border-bottom: 1px solid #e5e5e7;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.effect-category-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.effect-grid {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.effect-dialog-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  position: relative;
+  width: 100%;
+  text-align: left;
+}
+
+.effect-dialog-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 76px;
+  right: 0;
+  height: 1px;
+  background: #e5e5e7;
+}
+
+.effect-dialog-item:last-child::after {
+  display: none;
+}
+
+.effect-dialog-item:hover {
+  background: #f0f0f1;
+  transform: none;
+  box-shadow: none;
+}
+
+.effect-dialog-item:active {
+  background: #e8e8e9;
+  transform: none;
+  box-shadow: none;
+}
+
+.effect-dialog-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.effect-dialog-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.effect-dialog-item:hover .effect-dialog-icon {
+  transform: scale(1.05);
+}
+
+.effect-dialog-icon.reverb {
+  background: rgba(78, 205, 196, 0.1);
+  color: #4ecdc4;
+}
+
+.effect-dialog-icon.delay {
+  background: rgba(255, 165, 2, 0.1);
+  color: #ffa502;
+}
+
+.effect-dialog-icon.utility {
+  background: rgba(155, 89, 182, 0.1);
+  color: #9b59b6;
+}
+
+.effect-dialog-icon.limiter {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+.effect-dialog-icon.distortion {
+  background: rgba(243, 156, 18, 0.1);
+  color: #f39c12;
+}
+
+.effect-dialog-icon.tonegenerator {
+  background: rgba(0, 210, 211, 0.1);
+  color: #00d2d3;
+}
+
+.effect-dialog-icon.equalizer {
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+}
+
+.effect-dialog-icon.phaser {
+  background: rgba(162, 155, 254, 0.1);
+  color: #a29bfe;
+}
+
+.effect-dialog-icon.flanger {
+  background: rgba(116, 185, 255, 0.1);
+  color: #74b9ff;
+}
+
+.effect-dialog-icon.spectralgate {
+  background: rgba(0, 210, 211, 0.1);
+  color: #00d2d3;
+}
+
+.effect-dialog-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.effect-dialog-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d1d1f;
+  line-height: 1.2;
+}
+
+.effect-dialog-description {
+  font-size: 12px;
+  color: #8e8e93;
+  line-height: 1.3;
+}
+
+.effect-dialog-chevron {
+  width: 20px;
+  height: 20px;
+  color: #c7c7cc;
+  flex-shrink: 0;
+}
+
