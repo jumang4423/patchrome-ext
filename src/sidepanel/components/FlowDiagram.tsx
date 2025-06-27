@@ -560,10 +560,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -589,10 +592,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -618,10 +624,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -647,10 +656,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -676,10 +688,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -707,10 +722,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -738,10 +756,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -770,10 +791,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
@@ -803,10 +827,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
       };
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        const updated = [...nds, newNode];
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });

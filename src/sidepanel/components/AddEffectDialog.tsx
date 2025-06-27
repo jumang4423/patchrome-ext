@@ -1,9 +1,7 @@
 import React from 'react';
 import { 
   Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+  DialogContent
 } from '../../components/ui/dialog';
 import { ChevronRight } from 'lucide-react';
 
@@ -144,11 +142,7 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Add Effect</DialogTitle>
-        </DialogHeader>
-        
+      <DialogContent className="w-[90vw] max-w-[600px]">
         <div className="effect-dialog-content">
           {/* Generators Section */}
           <div className="effect-category">

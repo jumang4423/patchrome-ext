@@ -49,7 +49,7 @@ const Dialog = React.forwardRef<
 
   return (
     <DialogContext.Provider value={{ open, setOpen }}>
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         {/* Backdrop */}
         <div 
           className="fixed inset-0 bg-black/30 backdrop-blur-md animate-in fade-in-0 duration-200"
@@ -59,7 +59,7 @@ const Dialog = React.forwardRef<
         <div
           ref={ref}
           className={cn(
-            "relative z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-200",
+            "relative z-50 bg-white rounded-2xl shadow-2xl border border-gray-200/50 backdrop-blur-xl animate-in fade-in-0 zoom-in-95 duration-200 max-h-[90vh] overflow-hidden",
             className
           )}
           {...props}
@@ -103,11 +103,11 @@ const DialogContent = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("relative p-6", className)}
+      className={cn("relative", className)}
       {...props}
     >
       <button
-        className="absolute top-[12px] right-[12px] w-[24px] h-[24px] border-none bg-[#e5e5e7] text-[#8e8e93] cursor-pointer flex items-center justify-center rounded-full transition-all duration-200 p-0 hover:bg-[#d1d1d6] hover:text-[#636366] active:scale-95"
+        className="absolute top-[10px] right-[10px] w-[28px] h-[28px] border-none bg-[#e5e5e7] text-[#8e8e93] cursor-pointer flex items-center justify-center rounded-full transition-all duration-200 p-0 hover:bg-[#d1d1d6] hover:text-[#636366] active:scale-95 z-50"
         onClick={() => setOpen(false)}
         aria-label="Close dialog"
       >
@@ -128,7 +128,7 @@ const DialogHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-col space-y-1.5 text-center mb-6 pb-4 border-b border-gray-200",
+      "flex flex-col space-y-1.5 text-center",
       className
     )}
     {...props}
