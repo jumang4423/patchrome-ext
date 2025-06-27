@@ -25,7 +25,7 @@ function injectScript() {
 
 function updatePageSettings() {
   console.log(`[Content] Sending settings to inject.js:`, currentSettings);
-  // Also send the worklet URL since inject.js can't access chrome.runtime
+  // Also send the worklet URLs since inject.js can't access chrome.runtime
   const workletUrl = chrome.runtime.getURL('src/worklets/spectral-gate-processor.js');
   window.postMessage({
     type: 'PATCHROME_SETTINGS',

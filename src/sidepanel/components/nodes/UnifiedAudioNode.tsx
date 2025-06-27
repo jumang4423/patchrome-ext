@@ -404,7 +404,7 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                       checked={isChecked}
                       onCheckedChange={(checked) => {
                         if (onChange) {
-                          onChange(param.key, checked ? 1 : 0);
+                          onChange(param.key, checked);
                         }
                       }}
                       className="node-switch"

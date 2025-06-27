@@ -409,6 +409,7 @@ export const SpectralGateParamDOM: ParamConfig[] = [
   }
 ];
 
+
 // output
 
 export interface OutputNode extends BaseNode {

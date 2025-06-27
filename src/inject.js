@@ -19,7 +19,7 @@
     }
   };
   
-  // Store the worklet URL (will be set by content script)
+  // Store the worklet URLs (will be set by content script)
   let spectralGateWorkletUrl = null;
   
   // Keep track of processed elements
@@ -1531,9 +1531,9 @@
     if (event.data && event.data.type === 'PATCHROME_SETTINGS') {
       console.log('[Inject] Received PATCHROME_SETTINGS:', event.data.settings);
       
-      // Save the worklet URL if provided
+      // Save the worklet URLs if provided
       if (event.data.workletUrl) {
-        console.log('[Inject] Received worklet URL:', event.data.workletUrl);
+        console.log('[Inject] Received spectral gate worklet URL:', event.data.workletUrl);
         spectralGateWorkletUrl = event.data.workletUrl;
       }
       

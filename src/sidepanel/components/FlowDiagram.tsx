@@ -158,7 +158,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
   }, [onGraphChange]);
 
   // Handler for node value changes
-  const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number | string) => {
+  const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number | string | boolean) => {
     console.log(`[FlowDiagram] handleNodeValueChange - NodeId: ${nodeId}, Key: ${key}, Value: ${value}`);
     
     setNodes((currentNodes) => {
