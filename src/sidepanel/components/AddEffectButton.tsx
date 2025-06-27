@@ -144,6 +144,34 @@ const AddEffectButton: React.FC<AddEffectButtonProps> = ({ onAddEffect }) => {
             </button>
             <button
               className="effect-dropdown-item"
+              onClick={() => handleAddEffect('phaser')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon phaser">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 8C2 8 3 6 4 8C5 10 6 6 7 8C8 10 9 6 10 8C11 10 12 6 13 8C14 10 14 8 14 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 8C2 8 3 10 4 8C5 6 6 10 7 8C8 6 9 10 10 8C11 6 12 10 13 8C14 6 14 8 14 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+                  </svg>
+                </div>
+                <span>Phaser</span>
+              </div>
+            </button>
+            <button
+              className="effect-dropdown-item"
+              onClick={() => handleAddEffect('flanger')}
+            >
+              <div className="effect-item-content">
+                <div className="effect-item-icon flanger">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 8C3 8 4 5 5 8C6 11 7 5 8 8C9 11 10 5 11 8C12 11 13 8 13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M4 8C4 8 5 6 6 8C7 10 8 6 9 8C10 10 11 6 12 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" strokeDasharray="2 2"/>
+                  </svg>
+                </div>
+                <span>Flanger</span>
+              </div>
+            </button>
+            <button
+              className="effect-dropdown-item"
               onClick={() => handleAddEffect('limiter')}
             >
               <div className="effect-item-content">

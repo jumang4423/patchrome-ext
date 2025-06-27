@@ -1,5 +1,5 @@
-export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'output';
-export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger';
 export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean' | 'speed' | 'waveform' | 'filtertype';
 
 export interface BaseNode {
@@ -159,7 +159,7 @@ export const UtilityParamDOM: ParamConfig[] = [
      valueType: 'pan' as ValueType
   },
   {
-     label: 'Phase Reversal',
+     label: 'Invert Phase',
      key: 'reverse',
      valueType: 'boolean' as ValueType
   }
@@ -286,6 +286,109 @@ export const EqualizerParamDOM: ParamConfig[] = [
   }
 ];
 
+// phaser
+export interface PhaserNode extends BaseNode {
+  type: 'phaser';
+  data: {
+    rate: number;
+    depth: number;
+    feedback: number;
+    mix: number;
+  };
+  deletable: true;
+}
+
+export const PhaserParamDOM: ParamConfig[] = [
+  {
+    label: 'Rate',
+    key: 'rate',
+    min: 0.1,
+    max: 10,
+    step: 0.1,
+    valueType: 'number'
+  },
+  {
+    label: 'Depth',
+    key: 'depth',
+    min: 0,
+    max: 100,
+    step: 1,
+    valueType: 'percentage'
+  },
+  {
+    label: 'Feedback',
+    key: 'feedback',
+    min: 0,
+    max: 100,
+    step: 1,
+    valueType: 'percentage'
+  },
+  {
+    label: 'Mix',
+    key: 'mix',
+    min: 0,
+    max: 100,
+    step: 1,
+    valueType: 'percentage'
+  }
+];
+
+// flanger
+export interface FlangerNode extends BaseNode {
+  type: 'flanger';
+  data: {
+    rate: number;
+    depth: number;
+    feedback: number;
+    delay: number;
+    mix: number;
+  };
+  deletable: true;
+}
+
+export const FlangerParamDOM: ParamConfig[] = [
+  {
+    label: 'Rate',
+    key: 'rate',
+    min: 0.1,
+    max: 10,
+    step: 0.1,
+    valueType: 'number'
+  },
+  {
+    label: 'Depth',
+    key: 'depth',
+    min: 0,
+    max: 100,
+    step: 1,
+    valueType: 'percentage'
+  },
+  {
+    label: 'Feedback',
+    key: 'feedback',
+    min: -100,
+    max: 100,
+    step: 1,
+    valueType: 'percentage'
+  },
+  {
+    label: 'Delay',
+    key: 'delay',
+    min: 1,
+    max: 20,
+    step: 0.1,
+    valueType: 'milliseconds'
+  },
+  {
+    label: 'Mix',
+    key: 'mix',
+    min: 0,
+    max: 100,
+    step: 1,
+    valueType: 'percentage'
+  }
+];
+
 // output
 
 export interface OutputNode extends BaseNode {
@@ -296,7 +399,7 @@ export interface OutputNode extends BaseNode {
 
 export const OutputParamDOM: ParamConfig[] = [];
 
-export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | OutputNode;
 
 export interface Connection {
   id: string;

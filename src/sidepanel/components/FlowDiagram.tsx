@@ -36,15 +36,17 @@ const edgeTypes = {
 };
 
 const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2', type: 'maxStyle' },
+  { id: 'e1-3', source: '1', target: '3', type: 'maxStyle' },
 ];
 
 interface FlowDiagramProps {
   audioGraph: AudioGraphData;
   onGraphChange: (graph: AudioGraphData) => void;
+  isEnabled: boolean;
+  onEnabledChange: (enabled: boolean) => void;
 }
 
-const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChange }) => {
+const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChange, isEnabled, onEnabledChange }) => {
   const [nodeIdCounter, setNodeIdCounter] = React.useState(4);
   const { getViewport } = useReactFlow();
   const [nodes, setNodes] = useNodesState([]);
@@ -102,6 +104,21 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           filterType: node.data.filterType ?? 'lowpass',
           frequency: node.data.frequency ?? 1000,
           q: node.data.q ?? 1
+        };
+      } else if (node.data.type === 'phaser') {
+        baseNode.params = { 
+          rate: node.data.rate !== undefined ? node.data.rate : 0.5,
+          depth: node.data.depth !== undefined ? node.data.depth : 50,
+          feedback: node.data.feedback !== undefined ? node.data.feedback : 0,
+          mix: node.data.mix || 0
+        };
+      } else if (node.data.type === 'flanger') {
+        baseNode.params = { 
+          rate: node.data.rate !== undefined ? node.data.rate : 0.5,
+          depth: node.data.depth !== undefined ? node.data.depth : 50,
+          feedback: node.data.feedback !== undefined ? node.data.feedback : 0,
+          delay: node.data.delay !== undefined ? node.data.delay : 5,
+          mix: node.data.mix || 0
         };
       }
       
@@ -177,15 +194,14 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         ...AUDIO_PARAM_DEFAULTS.input,
         deletable: false,
         onChange: (key: string, value: number) => {
-          if (key === 'speed') {
-          }
+          handleNodeValueChange('1', key, value);
         }
       },
       position: { x: 100, y: 150 },
       deletable: false,
     },
     {
-      id: '2',
+      id: '3',
       type: 'unifiedAudio',
       data: {
         type: 'output' as const,
@@ -321,6 +337,39 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onRemove: () => handleRemoveNode(node.id)
           }
         };
+      } else if (node.type === 'phaser') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'phaser' as const,
+            rate: node.params.rate !== undefined ? node.params.rate : 0.5,
+            depth: node.params.depth !== undefined ? node.params.depth : 50,
+            feedback: node.params.feedback !== undefined ? node.params.feedback : 0,
+            mix: node.params.mix || 0,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'flanger') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'flanger' as const,
+            rate: node.params.rate !== undefined ? node.params.rate : 0.5,
+            depth: node.params.depth !== undefined ? node.params.depth : 50,
+            feedback: node.params.feedback !== undefined ? node.params.feedback : 0,
+            delay: node.params.delay !== undefined ? node.params.delay : 5,
+            mix: node.params.mix || 0,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
       } else {
         return {
           ...baseNode,
@@ -373,7 +422,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         setNodes(initialNodes);
         setEdges(initialEdges);
         setIsInitialized(true);
-        setNodeIdCounter(3);
+        setNodeIdCounter(4);
       }
       setHasLoadedFromStorage(true);
     }
@@ -679,6 +728,71 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       });
       
       setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'phaser') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'phaser' as const,
+          rate: 0.5,
+          depth: 50,
+          feedback: 0,
+          mix: 0,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'flanger') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'flanger' as const,
+          rate: 0.5,
+          depth: 50,
+          feedback: 0,
+          delay: 5,
+          mix: 0,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
     }
   }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode, handleNodeValueChange, edges, saveToLocalStorage]);
 
@@ -776,9 +890,9 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
       </ReactFlow>
-      <LogoButton onClick={() => setIsInfoModalOpen(true)} />
+      <LogoButton onClick={() => onEnabledChange(!isEnabled)} isActive={isEnabled} />
       <AddEffectButton onAddEffect={handleAddEffect} />
-      <MenuButton onAction={handleMenuAction} />
+      <MenuButton onAction={handleMenuAction} onInfoClick={() => setIsInfoModalOpen(true)} />
       <InfoModal 
         open={isInfoModalOpen} 
         onOpenChange={setIsInfoModalOpen} 

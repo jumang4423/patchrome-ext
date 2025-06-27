@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
+import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, PhaserParamDOM, FlangerParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
 import { Switch } from '../../../components/ui/switch';
 import {
   Select,
@@ -75,6 +75,18 @@ const nodeIcons = {
       <circle cx="20" cy="11" r="2" stroke="#3498db" strokeWidth="2" fill="none"/>
     </svg>
   ),
+  phaser: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 12C3 12 5 9 7 12C9 15 11 9 13 12C15 15 17 9 19 12C21 15 21 12 21 12" stroke="#a29bfe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M3 12C3 12 5 15 7 12C9 9 11 15 13 12C15 9 17 15 19 12C21 9 21 12 21 12" stroke="#a29bfe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+    </svg>
+  ),
+  flanger: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 12C4 12 6 8 8 12C10 16 12 8 14 12C16 16 18 8 20 12" stroke="#74b9ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M5 12C5 12 7 9 9 12C11 15 13 9 15 12C17 15 19 12 19 12" stroke="#74b9ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" strokeDasharray="3 3"/>
+    </svg>
+  ),
   output: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="#4caf50"/>
@@ -91,6 +103,8 @@ const nodeHeaders = {
   distortion: 'Distortion',
   tonegenerator: 'Tone Generator',
   equalizer: 'Equalizer',
+  phaser: 'Phaser',
+  flanger: 'Flanger',
   output: 'Audio Output'
 };
 
@@ -112,6 +126,10 @@ const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
       return ToneGeneratorParamDOM;
     case 'equalizer':
       return EqualizerParamDOM;
+    case 'phaser':
+      return PhaserParamDOM;
+    case 'flanger':
+      return FlangerParamDOM;
     case 'output':
       return OutputParamDOM;
     default:

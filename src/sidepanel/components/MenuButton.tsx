@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Download, Upload } from 'lucide-react';
+import { Menu, Download, Upload, Info } from 'lucide-react';
 
 interface MenuButtonProps {
   onAction: (action: 'import' | 'export') => void;
+  onInfoClick: () => void;
 }
 
-const MenuButton: React.FC<MenuButtonProps> = ({ onAction }) => {
+const MenuButton: React.FC<MenuButtonProps> = ({ onAction, onInfoClick }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -54,10 +55,6 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onAction }) => {
       
       {isOpen && (
         <div ref={menuRef} className="menu-dropdown">
-          <div className="menu-dropdown-header">
-            <span className="menu-dropdown-title">Menu</span>
-          </div>
-          <div className="menu-dropdown-separator" />
           <div className="menu-dropdown-items">
             <button
               className="menu-dropdown-item"
@@ -79,6 +76,20 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onAction }) => {
                   <Download size={16} />
                 </div>
                 <span>Export</span>
+              </div>
+            </button>
+            <button
+              className="menu-dropdown-item"
+              onClick={() => {
+                onInfoClick();
+                setIsOpen(false);
+              }}
+            >
+              <div className="menu-item-content">
+                <div className="menu-item-icon">
+                  <Info size={16} />
+                </div>
+                <span>Info</span>
               </div>
             </button>
           </div>

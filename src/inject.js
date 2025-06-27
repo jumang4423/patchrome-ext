@@ -40,10 +40,10 @@
       // Scale early reflections based on size
       const sizeMultiplier = 0.5 + (size / 100) * 0.5;
       const earlyReflections = [
-        { time: 0.015 * sizeMultiplier, gain: 0.5 },
-        { time: 0.025 * sizeMultiplier, gain: 0.3 },
-        { time: 0.035 * sizeMultiplier, gain: 0.2 },
-        { time: 0.045 * sizeMultiplier, gain: 0.15 }
+        { time: 0.015 * sizeMultiplier, gain: 0.25 },  // Reduced from 0.5
+        { time: 0.025 * sizeMultiplier, gain: 0.15 },  // Reduced from 0.3
+        { time: 0.035 * sizeMultiplier, gain: 0.1 },   // Reduced from 0.2
+        { time: 0.045 * sizeMultiplier, gain: 0.075 }  // Reduced from 0.15
       ];
       
       for (let i = 0; i < length; i++) {
@@ -59,7 +59,8 @@
         }
         
         // Add diffuse reverb tail with adjustable decay
-        sample += (Math.random() * 2 - 1) * Math.pow(1 - i / length, decayRate) * 0.5;
+        // Reduced amplitude from 0.5 to 0.25
+        sample += (Math.random() * 2 - 1) * Math.pow(1 - i / length, decayRate) * 0.25;
         
         // Apply slight stereo spread
         if (channel === 1) {
@@ -77,6 +78,13 @@
   function buildAudioGraph(audioContext, source, nodeGraph, customDestination) {
     const nodes = new Map();
     const connections = [];
+    
+    // If disabled, just connect source directly to destination
+    if (!settings.enabled) {
+      source.connect(customDestination || audioContext.destination);
+      nodes.set('bypass', { type: 'bypass', audioNode: source });
+      return nodes;
+    }
     
     // Create audio nodes based on graph nodes
     nodeGraph.nodes.forEach(node => {
@@ -122,7 +130,7 @@
           audioContext
         });
         
-        // Store internal connections
+        // Store internal connections (direct connection without limiter)
         connections.push({ from: convolver, to: wetGain });
         connections.push({ from: wetGain, to: merger });
         connections.push({ from: dryGain, to: merger });
@@ -384,6 +392,163 @@
           params: node.params,
           audioContext
         });
+      } else if (node.type === 'phaser') {
+        // Create phaser effect chain
+        const inputGain = audioContext.createGain();
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        const merger = audioContext.createGain();
+        
+        // Phaser components
+        const lfo = audioContext.createOscillator();
+        const lfoGain = audioContext.createGain();
+        const allPassFilters = [];
+        const numStages = 4; // 4-stage phaser
+        
+        // Create all-pass filter chain
+        for (let i = 0; i < numStages; i++) {
+          const filter = audioContext.createBiquadFilter();
+          filter.type = 'allpass';
+          filter.frequency.value = 1000 + i * 500; // Stagger frequencies
+          allPassFilters.push(filter);
+        }
+        
+        // Set up LFO
+        const rate = node.params.rate !== undefined ? node.params.rate : 0.5;
+        lfo.type = 'sine';
+        lfo.frequency.value = rate;
+        
+        // Set up depth (LFO modulation amount)
+        const depth = (node.params.depth || 50) / 100;
+        lfoGain.gain.value = depth * 1000; // Modulate up to 1000Hz
+        
+        // Set up feedback
+        const feedbackGain = audioContext.createGain();
+        const feedbackAmount = (node.params.feedback || 0) / 100;
+        feedbackGain.gain.value = feedbackAmount * 0.7; // Scale down feedback
+        
+        // Set up wet/dry mix
+        const wetAmount = (node.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        dryGain.gain.value = dryAmount;
+        wetGain.gain.value = wetAmount;
+        
+        // Connect LFO to modulate filter frequencies
+        lfo.connect(lfoGain);
+        allPassFilters.forEach(filter => {
+          lfoGain.connect(filter.frequency);
+        });
+        
+        // Connect filter chain
+        inputGain.connect(dryGain);
+        inputGain.connect(allPassFilters[0]);
+        
+        for (let i = 0; i < numStages - 1; i++) {
+          allPassFilters[i].connect(allPassFilters[i + 1]);
+        }
+        
+        // Connect feedback loop
+        allPassFilters[numStages - 1].connect(feedbackGain);
+        feedbackGain.connect(allPassFilters[0]);
+        
+        // Connect to wet gain and merger
+        allPassFilters[numStages - 1].connect(wetGain);
+        
+        // Start LFO
+        lfo.start();
+        
+        nodes.set(node.id, {
+          type: 'phaser',
+          input: inputGain,
+          output: merger,
+          inputGain,
+          dryGain,
+          wetGain,
+          merger,
+          lfo,
+          lfoGain,
+          allPassFilters,
+          feedbackGain,
+          params: node.params,
+          audioContext
+        });
+        
+        // Store internal connections
+        connections.push({ from: wetGain, to: merger });
+        connections.push({ from: dryGain, to: merger });
+      } else if (node.type === 'flanger') {
+        // Create flanger effect chain
+        const inputGain = audioContext.createGain();
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        const delayNode = audioContext.createDelay(0.02); // Max 20ms delay for flanger
+        const feedbackGain = audioContext.createGain();
+        const merger = audioContext.createGain();
+        
+        // LFO for delay time modulation
+        const lfo = audioContext.createOscillator();
+        const lfoGain = audioContext.createGain();
+        
+        // Set up LFO
+        const rate = node.params.rate !== undefined ? node.params.rate : 0.5;
+        lfo.type = 'sine';
+        lfo.frequency.value = rate;
+        
+        // Set up base delay time (in seconds)
+        const baseDelay = (node.params.delay || 5) / 1000; // Convert ms to seconds
+        delayNode.delayTime.value = baseDelay;
+        
+        // Set up depth (LFO modulation amount)
+        const depth = (node.params.depth || 50) / 100;
+        lfoGain.gain.value = depth * baseDelay * 0.5; // Modulate up to 50% of base delay
+        
+        // Connect LFO to modulate delay time
+        lfo.connect(lfoGain);
+        lfoGain.connect(delayNode.delayTime);
+        
+        // Set up feedback (can be negative for different character)
+        const feedbackAmount = (node.params.feedback || 0) / 100;
+        feedbackGain.gain.value = feedbackAmount * 0.8; // Scale down feedback
+        
+        // Set up wet/dry mix
+        const wetAmount = (node.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        dryGain.gain.value = dryAmount;
+        wetGain.gain.value = wetAmount;
+        
+        // Connect routing
+        inputGain.connect(dryGain);
+        inputGain.connect(delayNode);
+        
+        // Connect feedback loop
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+        
+        // Connect to wet gain
+        delayNode.connect(wetGain);
+        
+        // Start LFO
+        lfo.start();
+        
+        nodes.set(node.id, {
+          type: 'flanger',
+          input: inputGain,
+          output: merger,
+          inputGain,
+          dryGain,
+          wetGain,
+          delayNode,
+          feedbackGain,
+          merger,
+          lfo,
+          lfoGain,
+          params: node.params,
+          audioContext
+        });
+        
+        // Store internal connections
+        connections.push({ from: wetGain, to: merger });
+        connections.push({ from: dryGain, to: merger });
       } else if (node.type === 'output') {
         // Add a master gain to control overall volume
         const masterGain = audioContext.createGain();
@@ -426,6 +591,12 @@
           } else if (targetNode.type === 'equalizer') {
             // Connect to equalizer input
             sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect to phaser input
+            sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect to flanger input
+            sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
           }
@@ -447,6 +618,12 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'equalizer') {
             // Connect reverb output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect reverb output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect reverb output to flanger input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -470,6 +647,12 @@
           } else if (targetNode.type === 'equalizer') {
             // Connect delay output to equalizer input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect delay output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect delay output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -491,6 +674,12 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'equalizer') {
             // Connect utility output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect utility output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect utility output to flanger input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -514,6 +703,12 @@
           } else if (targetNode.type === 'equalizer') {
             // Connect limiter output to equalizer input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect limiter output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect limiter output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -535,6 +730,12 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'equalizer') {
             // Connect distortion output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect distortion output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect distortion output to flanger input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -558,6 +759,12 @@
           } else if (targetNode.type === 'equalizer') {
             // Connect tone generator output to equalizer input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect tone generator output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect tone generator output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -579,6 +786,68 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'equalizer') {
             // Connect equalizer output to next equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect equalizer output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect equalizer output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'phaser') {
+          if (targetNode.type === 'reverb') {
+            // Connect phaser output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect phaser output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect phaser output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect phaser output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect phaser output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect phaser output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect phaser output to next phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect phaser output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'flanger') {
+          if (targetNode.type === 'reverb') {
+            // Connect flanger output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect flanger output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect flanger output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect flanger output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect flanger output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect flanger output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect flanger output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect flanger output to next flanger input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -602,7 +871,7 @@
     
     // First, set all effect nodes to 0 (in case some are orphaned)
     graph.forEach((node) => {
-      if ((node.type === 'reverb' || node.type === 'delay') && node.wetGain && node.dryGain) {
+      if ((node.type === 'reverb' || node.type === 'delay' || node.type === 'phaser' || node.type === 'flanger') && node.wetGain && node.dryGain) {
         node.wetGain.gain.value = 0;
         node.dryGain.gain.value = 1;
       }
@@ -613,7 +882,7 @@
       const graphNode = settings.audioGraph.nodes.find(n => n.id === nodeId);
       if (!graphNode) {
         // This node doesn't exist in the graph anymore, ensure it's muted
-        if ((node.type === 'reverb' || node.type === 'delay') && node.wetGain) {
+        if ((node.type === 'reverb' || node.type === 'delay' || node.type === 'phaser' || node.type === 'flanger') && node.wetGain) {
           node.wetGain.gain.value = 0;
           node.dryGain.gain.value = 1;
         }
@@ -624,10 +893,9 @@
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
         
-        // Use setValueAtTime for immediate parameter changes
-        const currentTime = audioContexts.get(element)?.currentTime || 0;
-        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
-        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        // Set values immediately
+        node.wetGain.gain.value = wetAmount;
+        node.dryGain.gain.value = dryAmount;
         
         // Check if size or decay changed, and update impulse if needed
         const currentSize = graphNode.params.size !== undefined ? graphNode.params.size : 50;
@@ -660,18 +928,17 @@
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
         
-        // Use setValueAtTime for immediate parameter changes
-        const currentTime = audioContexts.get(element)?.currentTime || 0;
-        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
-        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        // Set values immediately
+        node.wetGain.gain.value = wetAmount;
+        node.dryGain.gain.value = dryAmount;
         
         // Update delay time (convert from ms to seconds)
         const delayTime = graphNode.params.delayTime !== undefined ? graphNode.params.delayTime / 1000 : 0.5;
-        node.delayNode.delayTime.setValueAtTime(delayTime, currentTime);
+        node.delayNode.delayTime.value = delayTime;
         
         // Update feedback
         const feedbackAmount = (graphNode.params.feedback || 0) / 100;
-        node.feedbackGain.gain.setValueAtTime(feedbackAmount, currentTime);
+        node.feedbackGain.gain.value = feedbackAmount;
         
         // Always update the stored parameters
         node.params = { ...graphNode.params };
@@ -690,10 +957,9 @@
         // Update pan value (-100 to +100 maps to -1 to +1)
         const panValue = graphNode.params.pan !== undefined ? graphNode.params.pan / 100 : 0;
         
-        // Use setValueAtTime for immediate parameter changes
-        const currentTime = audioContexts.get(element)?.currentTime || 0;
-        node.gainNode.gain.setValueAtTime(gainValue, currentTime);
-        node.pannerNode.pan.setValueAtTime(panValue, currentTime);
+        // Set values immediately
+        node.gainNode.gain.value = gainValue;
+        node.pannerNode.pan.value = panValue;
         
         // Handle phase reversal update
         const newPhaseReverse = graphNode.params.reverse !== undefined ? graphNode.params.reverse : false;
@@ -701,7 +967,7 @@
         
         if (newPhaseReverse !== oldPhaseReverse && node.rightPhaseGain) {
           // Update phase inversion
-          node.rightPhaseGain.gain.setValueAtTime(newPhaseReverse ? -1 : 1, currentTime);
+          node.rightPhaseGain.gain.value = newPhaseReverse ? -1 : 1;
           
           // Reconnect nodes based on new phase reversal state
           try {
@@ -732,12 +998,9 @@
         
         console.log(`Patchrome: Updated utility ${nodeId} - volume: ${volumeDb}dB (${gainValue}), pan: ${panValue}, reverse: ${newPhaseReverse}`);
       } else if (node.type === 'limiter' && node.compressor) {
-        // Use setValueAtTime for immediate parameter changes
-        const currentTime = audioContexts.get(element)?.currentTime || 0;
-        
         // Update threshold
         const thresholdDb = graphNode.params.threshold !== undefined ? graphNode.params.threshold : -6;
-        node.compressor.threshold.setValueAtTime(thresholdDb, currentTime);
+        node.compressor.threshold.value = thresholdDb;
         
         // Always update the stored parameters
         node.params = { ...graphNode.params };
@@ -747,10 +1010,9 @@
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
         
-        // Use setValueAtTime for immediate parameter changes
-        const currentTime = audioContexts.get(element)?.currentTime || 0;
-        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
-        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        // Set values immediately
+        node.wetGain.gain.value = wetAmount;
+        node.dryGain.gain.value = dryAmount;
         
         // Update drive by regenerating the curve
         const drive = graphNode.params.drive !== undefined ? graphNode.params.drive : 50;
@@ -774,9 +1036,6 @@
         
         console.log(`Patchrome: Updated distortion ${nodeId} - drive: ${drive}%, wet: ${wetAmount}, dry: ${dryAmount}`);
       } else if (node.type === 'tonegenerator' && node.oscillator && node.gainNode) {
-        // Use setValueAtTime for immediate parameter changes
-        const currentTime = audioContexts.get(element)?.currentTime || 0;
-        
         // Update waveform
         const newWaveform = graphNode.params.waveform || 'sine';
         const oldWaveform = node.params.waveform || 'sine';
@@ -786,21 +1045,18 @@
         
         // Update frequency
         const frequency = graphNode.params.frequency !== undefined ? graphNode.params.frequency : 440;
-        node.oscillator.frequency.setValueAtTime(frequency, currentTime);
+        node.oscillator.frequency.value = frequency;
         
         // Update volume
         const volumeDb = graphNode.params.volume !== undefined ? graphNode.params.volume : -12;
         const volumeLinear = Math.pow(10, volumeDb / 20);
-        node.gainNode.gain.setValueAtTime(volumeLinear, currentTime);
+        node.gainNode.gain.value = volumeLinear;
         
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
         console.log(`Patchrome: Updated tonegenerator ${nodeId} - waveform: ${newWaveform}, freq: ${frequency}Hz, volume: ${volumeDb}dB`);
       } else if (node.type === 'equalizer' && node.filter) {
-        // Use setValueAtTime for immediate parameter changes
-        const currentTime = audioContexts.get(element)?.currentTime || 0;
-        
         // Update filter type
         const newFilterType = graphNode.params.filterType || 'lowpass';
         const oldFilterType = node.params.filterType || 'lowpass';
@@ -810,16 +1066,70 @@
         
         // Update frequency
         const frequency = graphNode.params.frequency !== undefined ? graphNode.params.frequency : 1000;
-        node.filter.frequency.setValueAtTime(frequency, currentTime);
+        node.filter.frequency.value = frequency;
         
         // Update Q factor
         const q = graphNode.params.q !== undefined ? graphNode.params.q : 1;
-        node.filter.Q.setValueAtTime(q, currentTime);
+        node.filter.Q.value = q;
         
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
         console.log(`Patchrome: Updated equalizer ${nodeId} - type: ${newFilterType}, freq: ${frequency}Hz, Q: ${q}`);
+      } else if (node.type === 'phaser' && node.wetGain && node.dryGain) {
+        const wetAmount = (graphNode.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        
+        // Update LFO rate
+        const rate = graphNode.params.rate !== undefined ? graphNode.params.rate : 0.5;
+        node.lfo.frequency.setValueAtTime(rate, currentTime);
+        
+        // Update depth (LFO modulation amount)
+        const depth = (graphNode.params.depth || 50) / 100;
+        node.lfoGain.gain.setValueAtTime(depth * 1000, currentTime);
+        
+        // Update feedback
+        const feedbackAmount = (graphNode.params.feedback || 0) / 100;
+        node.feedbackGain.gain.setValueAtTime(feedbackAmount * 0.7, currentTime);
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated phaser ${nodeId} - mix: ${wetAmount}, rate: ${rate}, depth: ${depth}, feedback: ${feedbackAmount}`);
+      } else if (node.type === 'flanger' && node.wetGain && node.dryGain) {
+        const wetAmount = (graphNode.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        
+        // Update LFO rate
+        const rate = graphNode.params.rate !== undefined ? graphNode.params.rate : 0.5;
+        node.lfo.frequency.setValueAtTime(rate, currentTime);
+        
+        // Update base delay time
+        const baseDelay = (graphNode.params.delay || 5) / 1000;
+        node.delayNode.delayTime.setValueAtTime(baseDelay, currentTime);
+        
+        // Update depth (LFO modulation amount)
+        const depth = (graphNode.params.depth || 50) / 100;
+        node.lfoGain.gain.setValueAtTime(depth * baseDelay * 0.5, currentTime);
+        
+        // Update feedback
+        const feedbackAmount = (graphNode.params.feedback || 0) / 100;
+        node.feedbackGain.gain.setValueAtTime(feedbackAmount * 0.8, currentTime);
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated flanger ${nodeId} - mix: ${wetAmount}, rate: ${rate}, delay: ${baseDelay}, depth: ${depth}, feedback: ${feedbackAmount}`);
       }
     });
   }
@@ -836,6 +1146,12 @@
     if (!graph) return;
     
     graph.forEach(node => {
+      // Handle bypass mode
+      if (node.type === 'bypass' && node.audioNode) {
+        try { node.audioNode.disconnect(); } catch(e) {}
+        return;
+      }
+      
       if (node.audioNode && node.audioNode.disconnect) {
         try { node.audioNode.disconnect(); } catch(e) {}
       }
@@ -886,6 +1202,20 @@
       }
       if (node.filter) {
         try { node.filter.disconnect(); } catch(e) {}
+      }
+      if (node.lfo) {
+        try { 
+          node.lfo.disconnect(); 
+          node.lfo.stop();
+        } catch(e) {}
+      }
+      if (node.lfoGain) {
+        try { node.lfoGain.disconnect(); } catch(e) {}
+      }
+      if (node.allPassFilters) {
+        node.allPassFilters.forEach(filter => {
+          try { filter.disconnect(); } catch(e) {}
+        });
       }
       if (node.masterGain) {
         try { node.masterGain.disconnect(); } catch(e) {}
@@ -968,6 +1298,14 @@
           return originalDescriptor.get.call(this);
         },
         set: function(value) {
+          // If disabled, use the original value
+          if (!settings.enabled) {
+            if (isFinite(value) && value > 0) {
+              originalDescriptor.set.call(this, value);
+            }
+            return;
+          }
+          
           // Always use our speed setting (get it fresh each time)
           const currentSpeed = getCurrentSpeed();
           if (isFinite(currentSpeed) && currentSpeed > 0) {
@@ -983,13 +1321,18 @@
       });
     }
     
-    const currentSpeed = getCurrentSpeed();
-    if (isFinite(currentSpeed) && currentSpeed > 0) {
-      // Set playback rate with validation
-      element.playbackRate = currentSpeed;
-      
-      // Apply pitch settings
-      applyPitchSettings(element);
+    if (settings.enabled) {
+      const currentSpeed = getCurrentSpeed();
+      if (isFinite(currentSpeed) && currentSpeed > 0) {
+        // Set playback rate with validation
+        element.playbackRate = currentSpeed;
+        
+        // Apply pitch settings
+        applyPitchSettings(element);
+      }
+    } else {
+      // Reset to normal playback when disabled
+      element.playbackRate = 1.0;
     }
   }
   
@@ -1029,6 +1372,15 @@
       
       // Validate settings before applying
       if (newSettings) {
+        // Check if enabled state changed
+        const oldEnabled = settings.enabled;
+        const newEnabled = newSettings.enabled !== false;
+        
+        if (oldEnabled !== newEnabled) {
+          needsRebuild = true;
+          console.log('Patchrome: Enabled state changed, triggering rebuild');
+        }
+        
         if (typeof newSettings.speed === 'number' && isFinite(newSettings.speed) && newSettings.speed > 0) {
           settings.speed = newSettings.speed;
         }
@@ -1050,7 +1402,7 @@
           // Always update the settings
           settings.audioGraph = newSettings.audioGraph;
         }
-        settings.enabled = newSettings.enabled !== false;
+        settings.enabled = newEnabled;
       }
       
       console.log(`[Inject] needsRebuild: ${needsRebuild}, settings.audioGraph:`, settings.audioGraph);
@@ -1175,12 +1527,19 @@
             
             // Monitor changes
             const checkPitch = () => {
-              const currentSpeed = getCurrentSpeed();
-              if (mediaElement.playbackRate !== currentSpeed) {
-                mediaElement.playbackRate = currentSpeed;
+              if (settings.enabled) {
+                const currentSpeed = getCurrentSpeed();
+                if (mediaElement.playbackRate !== currentSpeed) {
+                  mediaElement.playbackRate = currentSpeed;
+                }
+                applyPitchSettings(mediaElement);
+                updateAudioGraphParams(mediaElement);
+              } else {
+                // Reset to normal playback when disabled
+                if (mediaElement.playbackRate !== 1.0) {
+                  mediaElement.playbackRate = 1.0;
+                }
               }
-              applyPitchSettings(mediaElement);
-              updateAudioGraphParams(mediaElement);
               
               // Check if we need to rebuild the graph
               if (needsSoundCloudRebuild) {
