@@ -134,6 +134,12 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           threshold: node.data.threshold !== undefined ? node.data.threshold : -45.1,
           ratio: node.data.ratio !== undefined ? node.data.ratio : 1.2
         };
+      } else if (node.data.type === 'bitcrusher') {
+        baseNode.params = { 
+          mix: node.data.mix !== undefined ? node.data.mix : 0,
+          rate: node.data.rate !== undefined ? node.data.rate : 30000,
+          bits: node.data.bits !== undefined ? node.data.bits : 8
+        };
       }
       
       return baseNode;
@@ -405,6 +411,21 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             inputGain: node.params.inputGain !== undefined ? node.params.inputGain : 10,
             threshold: node.params.threshold !== undefined ? node.params.threshold : -45.1,
             ratio: node.params.ratio !== undefined ? node.params.ratio : 1.2,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'bitcrusher') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'bitcrusher' as const,
+            mix: node.params.mix !== undefined ? node.params.mix : 0,
+            rate: node.params.rate !== undefined ? node.params.rate : 30000,
+            bits: node.params.bits !== undefined ? node.params.bits : 8,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -914,6 +935,40 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
         const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'bitcrusher') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'bitcrusher' as const,
+          mix: 0,
+          rate: 30000,
+          bits: 8,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });

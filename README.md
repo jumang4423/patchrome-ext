@@ -36,7 +36,7 @@ Patchrome is a Chrome extension that intercepts and processes audio from web pag
 
 ### Quick Actions
 
-- **Right-click on any node connection** → Opens the "Add Effect" menu instantly
+- **Right-click on empty space** → Opens the "Add Effect" menu instantly
 - **Double-click on any slider** → Enter precise values manually
 - **Drag nodes** → Rearrange your effect chain visually
 - **Click the power button** → Enable/disable all effects globally

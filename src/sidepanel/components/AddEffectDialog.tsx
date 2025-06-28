@@ -123,6 +123,18 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
           <rect x="6" y="6" width="4" height="4" stroke="currentColor" strokeWidth="1.5"/>
         </svg>
       )
+    },
+    {
+      type: 'bitcrusher',
+      name: 'Bit Crusher',
+      description: 'Lo-fi digital distortion',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="6" width="3" height="4" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="6.5" y="4" width="3" height="8" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="11" y="7" width="3" height="2" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+      )
     }
   ];
 

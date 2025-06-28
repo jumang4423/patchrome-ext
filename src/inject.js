@@ -669,6 +669,81 @@
           params: node.params,
           audioContext
         });
+      } else if (node.type === 'bitcrusher') {
+        // Create bitcrusher effect chain
+        const inputGain = audioContext.createGain();
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
+        const merger = audioContext.createGain();
+        
+        // Create script processor for bitcrushing effect
+        const bufferSize = 4096;
+        const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 2, 2);
+        
+        // Get parameters
+        const sampleRate = node.params.rate !== undefined ? node.params.rate : 30000;
+        const bitDepth = node.params.bits !== undefined ? node.params.bits : 8;
+        
+        // Calculate step size for bit reduction
+        const step = Math.pow(0.5, bitDepth);
+        
+        // Calculate sample reduction factor
+        const sampleReduction = audioContext.sampleRate / sampleRate;
+        
+        // Bitcrusher processing
+        let lastSampleL = 0;
+        let lastSampleR = 0;
+        let sampleCounter = 0;
+        
+        scriptProcessor.onaudioprocess = function(e) {
+          const inputL = e.inputBuffer.getChannelData(0);
+          const inputR = e.inputBuffer.getChannelData(1);
+          const outputL = e.outputBuffer.getChannelData(0);
+          const outputR = e.outputBuffer.getChannelData(1);
+          
+          for (let i = 0; i < bufferSize; i++) {
+            // Sample rate reduction
+            if (sampleCounter >= sampleReduction) {
+              lastSampleL = inputL[i];
+              lastSampleR = inputR[i];
+              sampleCounter = 0;
+            }
+            
+            // Bit depth reduction
+            outputL[i] = Math.round(lastSampleL / step) * step;
+            outputR[i] = Math.round(lastSampleR / step) * step;
+            
+            sampleCounter++;
+          }
+        };
+        
+        // Set up wet/dry mix
+        const wetAmount = (node.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        dryGain.gain.value = dryAmount;
+        wetGain.gain.value = wetAmount;
+        
+        // Connect internal routing
+        inputGain.connect(dryGain);
+        inputGain.connect(scriptProcessor);
+        
+        nodes.set(node.id, {
+          type: 'bitcrusher',
+          input: inputGain,
+          output: merger,
+          inputGain,
+          dryGain,
+          wetGain,
+          scriptProcessor,
+          merger,
+          params: node.params,
+          audioContext
+        });
+        
+        // Store internal connections
+        connections.push({ from: scriptProcessor, to: wetGain });
+        connections.push({ from: wetGain, to: merger });
+        connections.push({ from: dryGain, to: merger });
       } else if (node.type === 'output') {
         // Add a master gain to control overall volume
         const masterGain = audioContext.createGain();
@@ -722,6 +797,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect to spectral compressor input
             sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect to bitcrusher input
+            sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
           }
@@ -755,6 +833,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect reverb output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect reverb output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -790,6 +871,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect delay output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect delay output to bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -823,6 +907,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect utility output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect utility output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -858,6 +945,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect limiter output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect limiter output to bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -892,6 +982,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect distortion output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect distortion output to bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -922,6 +1015,12 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralgate') {
             // Connect tonegenerator output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralcompressor') {
+            // Connect tonegenerator output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect tonegenerator output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -957,6 +1056,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect equalizer output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect equalizer output to bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -990,6 +1092,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect phaser output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect phaser output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -1025,6 +1130,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect flanger output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect flanger output to bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -1058,6 +1166,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect spectral gate output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect spectral gate output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -1093,6 +1204,46 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect spectral compressor output to next spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect spectral compressor output to bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'bitcrusher') {
+          if (targetNode.type === 'reverb') {
+            // Connect bitcrusher output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect bitcrusher output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect bitcrusher output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect bitcrusher output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect bitcrusher output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect bitcrusher output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect bitcrusher output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect bitcrusher output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect bitcrusher output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralcompressor') {
+            // Connect bitcrusher output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect bitcrusher output to next bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
           }
@@ -1115,7 +1266,7 @@
     
     // First, set all effect nodes to 0 (in case some are orphaned)
     graph.forEach((node) => {
-      if ((node.type === 'reverb' || node.type === 'delay' || node.type === 'phaser' || node.type === 'flanger') && node.wetGain && node.dryGain) {
+      if ((node.type === 'reverb' || node.type === 'delay' || node.type === 'phaser' || node.type === 'flanger' || node.type === 'bitcrusher') && node.wetGain && node.dryGain) {
         node.wetGain.gain.value = 0;
         node.dryGain.gain.value = 1;
       }
@@ -1126,7 +1277,7 @@
       const graphNode = settings.audioGraph.nodes.find(n => n.id === nodeId);
       if (!graphNode) {
         // This node doesn't exist in the graph anymore, ensure it's muted
-        if ((node.type === 'reverb' || node.type === 'delay' || node.type === 'phaser' || node.type === 'flanger') && node.wetGain) {
+        if ((node.type === 'reverb' || node.type === 'delay' || node.type === 'phaser' || node.type === 'flanger' || node.type === 'bitcrusher') && node.wetGain) {
           node.wetGain.gain.value = 0;
           node.dryGain.gain.value = 1;
         }
@@ -1422,6 +1573,59 @@
         
         // Always update the stored parameters
         node.params = { ...graphNode.params };
+      } else if (node.type === 'bitcrusher' && node.wetGain && node.dryGain) {
+        const wetAmount = (graphNode.params.mix || 0) / 100;
+        const dryAmount = 1 - wetAmount;
+        
+        // Use setValueAtTime for immediate parameter changes
+        const currentTime = audioContexts.get(element)?.currentTime || 0;
+        node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+        node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+        
+        // Update bitcrusher parameters
+        const newRate = graphNode.params.rate !== undefined ? graphNode.params.rate : 30000;
+        const newBits = graphNode.params.bits !== undefined ? graphNode.params.bits : 8;
+        
+        // We need to update the script processor's internal variables
+        // Since ScriptProcessorNode doesn't have exposed parameters, we'll update via the node object
+        if (node.scriptProcessor && node.scriptProcessor.onaudioprocess) {
+          // Recalculate step size for bit reduction
+          const step = Math.pow(0.5, newBits);
+          // Recalculate sample reduction factor
+          const sampleReduction = node.audioContext.sampleRate / newRate;
+          
+          // Update the processor function with new parameters
+          let lastSampleL = 0;
+          let lastSampleR = 0;
+          let sampleCounter = 0;
+          
+          node.scriptProcessor.onaudioprocess = function(e) {
+            const inputL = e.inputBuffer.getChannelData(0);
+            const inputR = e.inputBuffer.getChannelData(1);
+            const outputL = e.outputBuffer.getChannelData(0);
+            const outputR = e.outputBuffer.getChannelData(1);
+            
+            for (let i = 0; i < e.inputBuffer.length; i++) {
+              // Sample rate reduction
+              if (sampleCounter >= sampleReduction) {
+                lastSampleL = inputL[i];
+                lastSampleR = inputR[i];
+                sampleCounter = 0;
+              }
+              
+              // Bit depth reduction
+              outputL[i] = Math.round(lastSampleL / step) * step;
+              outputR[i] = Math.round(lastSampleR / step) * step;
+              
+              sampleCounter++;
+            }
+          };
+        }
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
+        
+        console.log(`Patchrome: Updated bitcrusher ${nodeId} - mix: ${wetAmount * 100}%, rate: ${newRate}Hz, bits: ${newBits}`);
       }
     });
   }

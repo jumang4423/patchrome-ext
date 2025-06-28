@@ -852,6 +852,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #fd79a8;
 }
 
+.effect-item-icon.bitcrusher {
+  background: rgba(250, 177, 160, 0.1);
+  color: #fab1a0;
+}
+
 .effect-item-shortcut {
   font-size: 12px;
   color: #6c757d;
@@ -1177,6 +1182,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .effect-dialog-icon.spectralcompressor {
   background: rgba(253, 121, 168, 0.1);
   color: #fd79a8;
+}
+
+.effect-dialog-icon.bitcrusher {
+  background: rgba(250, 177, 160, 0.1);
+  color: #fab1a0;
 }
 
 .effect-dialog-info {
