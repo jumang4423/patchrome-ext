@@ -381,17 +381,19 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
           {nodeIcons[type]}
         </div>
         <h3>{nodeHeaders[type]}</h3>
-        {deletable && (
-          <button 
-            className="node-remove-button" 
-            onClick={handleRemove}
-            aria-label="Remove node"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
-        )}
+        <div className="node-header-actions">
+          {deletable && (
+            <button 
+              className="node-remove-button" 
+              onClick={handleRemove}
+              aria-label="Remove node"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
       
       {type === 'equalizer' && (

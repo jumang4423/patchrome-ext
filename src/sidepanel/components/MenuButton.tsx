@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Info, ExternalLink } from 'lucide-react';
+import { Menu, Info, ExternalLink, Package } from 'lucide-react';
 
 interface MenuButtonProps {
   onInfoClick: () => void;
+  onPresetsClick: () => void;
 }
 
-const MenuButton: React.FC<MenuButtonProps> = ({ onInfoClick }) => {
+const MenuButton: React.FC<MenuButtonProps> = ({ onInfoClick, onPresetsClick }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -51,6 +52,20 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onInfoClick }) => {
       {isOpen && (
         <div ref={menuRef} className="menu-dropdown">
           <div className="menu-dropdown-items">
+            <button
+              className="menu-dropdown-item"
+              onClick={() => {
+                onPresetsClick();
+                setIsOpen(false);
+              }}
+            >
+              <div className="menu-item-content">
+                <div className="menu-item-icon">
+                  <Package size={16} />
+                </div>
+                <span>Presets</span>
+              </div>
+            </button>
             <button
               className="menu-dropdown-item"
               onClick={() => {

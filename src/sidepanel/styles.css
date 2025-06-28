@@ -191,22 +191,32 @@ input[type="range"]::-webkit-slider-thumb:hover {
   letter-spacing: -0.2px;
 }
 
+.node-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .node-remove-button {
-  position: absolute;
-  top: 6px;
-  right: 8px;
   width: 20px;
   height: 20px;
   border: none;
-  background: #e9ecef;
-  color: #6c757d;
-  cursor: pointer;
+  background: white;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 100%;
+  cursor: pointer;
+  opacity: 0;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  color: #868e96;
   padding: 0;
+}
+
+.custom-node:hover .node-remove-button {
+  opacity: 1;
 }
 
 .node-remove-button:hover {
@@ -1254,4 +1264,242 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #c7c7cc;
   flex-shrink: 0;
 }
+
+/* Preset Manager Styles - Matching Effect Dialog Style */
+.preset-manager-dialog .dialog-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preset-manager-dialog .dialog-header h2 {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.preset-sections {
+  padding: 16px 0;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.preset-sections::-webkit-scrollbar {
+  width: 6px;
+}
+
+.preset-sections::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preset-sections::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.preset-sections::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.preset-section {
+  margin-bottom: 24px;
+}
+
+.preset-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 24px 8px;
+  margin: 0;
+}
+
+.preset-items {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* Effect-like item styling for presets */
+.effect-item.save-preset-button,
+.effect-item.preset-item {
+  position: relative;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.effect-item.preset-item {
+  padding-right: 60px; /* Space for delete button */
+}
+
+.save-preset-button:hover,
+.preset-content:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.save-preset-button:active,
+.preset-content:active {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.preset-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: transparent;
+  border: none;
+  padding: 16px 24px;
+  margin: 0 -24px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.effect-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.effect-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.effect-info h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  margin: 0 0 2px 0;
+}
+
+.effect-info p {
+  font-size: 14px;
+  color: #8e8e93;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-meta {
+  font-size: 12px !important;
+  color: #6e6e73 !important;
+  margin-top: 2px !important;
+}
+
+.effect-arrow {
+  color: #c7c7cc;
+  flex-shrink: 0;
+}
+
+.preset-delete {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 8px;
+  color: #8e8e93;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.preset-delete:hover {
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+}
+
+/* Save preset input container */
+.save-preset-input-container {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preset-name-input,
+.preset-description-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.preset-name-input:focus,
+.preset-description-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.preset-name-input::placeholder,
+.preset-description-input::placeholder {
+  color: #6e6e73;
+}
+
+.save-preset-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.save-preset-confirm,
+.save-preset-cancel {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.save-preset-confirm {
+  background: #007AFF;
+  color: white;
+}
+
+.save-preset-confirm:hover:not(:disabled) {
+  background: #0051D5;
+}
+
+.save-preset-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-preset-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.save-preset-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 

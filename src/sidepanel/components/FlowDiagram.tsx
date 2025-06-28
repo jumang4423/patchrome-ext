@@ -25,8 +25,11 @@ import AddEffectDialog from './AddEffectDialog';
 import MenuButton from './MenuButton';
 import InfoModal from './InfoModal';
 import LogoButton from './LogoButton';
+import PresetManager from './PresetManager';
 import { AudioGraphData } from '../../shared/types';
 import { AUDIO_PARAM_DEFAULTS } from '../../constants/audioDefaults';
+import { NodeGraphPreset } from '../../types/presets';
+import { EffectNodeType, NodeType } from '../../types/nodeGraphStructure';
 
 const nodeTypes = {
   unifiedAudio: UnifiedAudioNode,
@@ -56,6 +59,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = React.useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = React.useState(false);
   const [isEffectDialogOpen, setIsEffectDialogOpen] = React.useState(false);
+  const [isPresetManagerOpen, setIsPresetManagerOpen] = React.useState(false);
   
   // Helper function to save current state to localStorage
   const saveToLocalStorage = useCallback((nodesList: Node[], edgesList: Edge[]) => {
@@ -230,6 +234,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     },
   ];
 
+
   // Convert audioGraph to ReactFlow nodes
   const convertGraphToNodes = useCallback((graph: AudioGraphData): Node[] => {
     return graph.nodes.map(node => {
@@ -265,7 +270,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'delay') {
@@ -280,7 +285,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'utility') {
@@ -295,7 +300,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'limiter') {
@@ -308,7 +313,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'distortion') {
@@ -322,7 +327,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'tonegenerator') {
@@ -368,7 +373,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'flanger') {
@@ -385,7 +390,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'spectralgate') {
@@ -398,7 +403,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'spectralcompressor') {
@@ -415,7 +420,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else if (node.type === 'bitcrusher') {
@@ -430,7 +435,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
             },
-            onRemove: () => handleRemoveNode(node.id)
+            onRemove: () => handleRemoveNode(node.id),
           }
         };
       } else {
@@ -600,7 +605,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -632,7 +637,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -664,7 +669,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -696,7 +701,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -728,7 +733,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -762,7 +767,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number | string) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -796,7 +801,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number | string) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -831,7 +836,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -867,7 +872,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -899,7 +904,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
       };
@@ -928,7 +933,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
       };
@@ -959,7 +964,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
           },
-          onRemove: () => handleRemoveNode(newNodeId)
+          onRemove: () => handleRemoveNode(newNodeId),
         },
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
@@ -1004,6 +1009,45 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     setIsEffectDialogOpen(true);
   }, []);
 
+  // Handle applying a preset to the graph
+  const handleApplyPreset = useCallback((preset: NodeGraphPreset) => {
+    // Clear existing graph (except input/output nodes)
+    const inputNode = nodes.find(n => n.data.type === 'input');
+    const outputNode = nodes.find(n => n.data.type === 'output');
+    
+    // Create new nodes from preset
+    const newNodes: Node[] = preset.nodes.map(presetNode => {
+      // Skip input/output nodes from preset, use existing ones
+      if (presetNode.type === 'input' && inputNode) {
+        return inputNode;
+      }
+      if (presetNode.type === 'output' && outputNode) {
+        return outputNode;
+      }
+      
+      // Create new node
+      return {
+        id: presetNode.id,
+        type: 'unifiedAudio',
+        position: presetNode.position,
+        data: {
+          ...presetNode.data,
+          onChange: (key: string, value: number | string) => {
+            handleNodeValueChange(presetNode.id, key, value);
+          },
+          onRemove: () => handleRemoveNode(presetNode.id)
+        }
+      };
+    });
+    
+    // Apply new nodes and edges
+    setNodes(newNodes);
+    setEdges(preset.edges);
+    
+    // Save to localStorage
+    saveToLocalStorage(newNodes, preset.edges);
+  }, [nodes, setNodes, setEdges, handleNodeValueChange, handleRemoveNode, saveToLocalStorage]);
+
   return (
     <div 
       style={{ 
@@ -1029,7 +1073,10 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       </ReactFlow>
       <LogoButton onClick={() => onEnabledChange(!isEnabled)} isActive={isEnabled} />
       <AddEffectButton onClick={() => setIsEffectDialogOpen(true)} />
-      <MenuButton onInfoClick={() => setIsInfoModalOpen(true)} />
+      <MenuButton 
+        onInfoClick={() => setIsInfoModalOpen(true)}
+        onPresetsClick={() => setIsPresetManagerOpen(true)}
+      />
       <AddEffectDialog 
         open={isEffectDialogOpen} 
         onOpenChange={setIsEffectDialogOpen}
@@ -1038,6 +1085,13 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       <InfoModal 
         open={isInfoModalOpen} 
         onOpenChange={setIsInfoModalOpen} 
+      />
+      <PresetManager
+        isOpen={isPresetManagerOpen}
+        onClose={() => setIsPresetManagerOpen(false)}
+        onApplyPreset={handleApplyPreset}
+        currentNodes={nodes}
+        currentEdges={edges}
       />
     </div>
   );
