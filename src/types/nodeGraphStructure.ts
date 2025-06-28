@@ -488,7 +488,7 @@ export const BitcrusherParamDOM: ParamConfig[] = [
   {
     label: 'Sample Rate',
     key: 'rate',
-    min: 20000,
+    min: 2000,
     max: 40000,
     step: 100,
     valueType: 'number'

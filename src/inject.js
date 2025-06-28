@@ -693,7 +693,12 @@
         // Bitcrusher processing
         let lastSampleL = 0;
         let lastSampleR = 0;
+        let targetSampleL = 0;
+        let targetSampleR = 0;
         let sampleCounter = 0;
+        
+        // Smoothing filter to reduce clicks
+        const smoothingFactor = 0.999; // Adjust for more/less smoothing
         
         scriptProcessor.onaudioprocess = function(e) {
           const inputL = e.inputBuffer.getChannelData(0);
@@ -704,10 +709,14 @@
           for (let i = 0; i < bufferSize; i++) {
             // Sample rate reduction
             if (sampleCounter >= sampleReduction) {
-              lastSampleL = inputL[i];
-              lastSampleR = inputR[i];
+              targetSampleL = inputL[i];
+              targetSampleR = inputR[i];
               sampleCounter = 0;
             }
+            
+            // Apply smoothing to reduce clicks
+            lastSampleL = lastSampleL * smoothingFactor + targetSampleL * (1 - smoothingFactor);
+            lastSampleR = lastSampleR * smoothingFactor + targetSampleR * (1 - smoothingFactor);
             
             // Bit depth reduction
             outputL[i] = Math.round(lastSampleL / step) * step;
