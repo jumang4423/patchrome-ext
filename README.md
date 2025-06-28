@@ -1,6 +1,10 @@
-# Patchrome
+<div align="center">
+  <img src="logo.png" alt="Patchrome Logo" width="200"/>
+  
+  # Patchrome
 
-A powerful Chrome extension for real-time audio manipulation on web pages. Process any audio playing in your browser with a modular effects chain using visual node-based routing.
+  A powerful Chrome extension for real-time audio manipulation on web pages. Process any audio playing in your browser with a modular effects chain using visual node-based routing.
+</div>
 
 ## Overview
 
@@ -98,9 +102,6 @@ The extension uses Web Audio API for processing, which means:
 - [ ] Implement preset system for saving/loading effect chains
 - [ ] Add visualization (spectrum analyzer, waveform display)
 - [ ] Optimize performance for complex effect chains
-- [ ] Add MIDI control support
-- [ ] Implement sidechain compression
-- [ ] Add more modulation effects (Chorus, Tremolo, Vibrato)
 - [ ] Create effect chain templates for common use cases
 - [ ] Add A/B comparison feature
 - [ ] Implement effect automation/LFO modulation
