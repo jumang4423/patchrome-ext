@@ -208,15 +208,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0;
+  opacity: 1;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   color: #868e96;
   padding: 0;
-}
-
-.custom-node:hover .node-remove-button {
-  opacity: 1;
 }
 
 .node-remove-button:hover {
@@ -1266,240 +1262,271 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* Preset Manager Styles - Matching Effect Dialog Style */
-.preset-manager-dialog .dialog-header {
-  padding: 24px 24px 16px;
+.preset-dialog-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 16px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.preset-manager-dialog .dialog-header h2 {
-  color: #fff;
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.preset-sections {
-  padding: 16px 0;
-  overflow-y: auto;
-  max-height: 60vh;
-}
-
-.preset-sections::-webkit-scrollbar {
-  width: 6px;
-}
-
-.preset-sections::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.preset-sections::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.preset-sections::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.preset-section {
-  margin-bottom: 24px;
-}
-
-.preset-section-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #8e8e93;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0 24px 8px;
-  margin: 0;
-}
-
-.preset-items {
-  display: flex;
-  flex-direction: column;
-}
-
-
-/* Effect-like item styling for presets */
-.effect-item.save-preset-button,
-.effect-item.preset-item {
   position: relative;
-  padding: 16px 24px;
+}
+
+.preset-header-buttons {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  cursor: pointer;
-  transition: background 0.15s ease;
+  gap: 6px;
+  z-index: 10;
+  position: relative;
+}
+
+.preset-dialog-title {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none; /* Make title not interfere with buttons */
+}
+
+.preset-save-button-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   background: transparent;
-  border: none;
-  width: 100%;
-  text-align: left;
-}
-
-.effect-item.preset-item {
-  padding-right: 60px; /* Space for delete button */
-}
-
-.save-preset-button:hover,
-.preset-content:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.save-preset-button:active,
-.preset-content:active {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.preset-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: transparent;
-  border: none;
-  padding: 16px 24px;
-  margin: 0 -24px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.effect-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid #007AFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #007AFF;
   flex-shrink: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 11;
 }
 
-.effect-info {
-  flex: 1;
-  min-width: 0;
+.preset-save-button-small:hover {
+  background: rgba(0, 122, 255, 0.1);
+  border-color: #0051D5;
+  color: #0051D5;
+  transform: scale(1.05);
 }
 
-.effect-info h4 {
-  font-size: 16px;
-  font-weight: 500;
-  color: #fff;
-  margin: 0 0 2px 0;
+.preset-save-button-small:active {
+  transform: scale(0.98);
 }
 
-.effect-info p {
-  font-size: 14px;
-  color: #8e8e93;
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.preset-meta {
-  font-size: 12px !important;
-  color: #6e6e73 !important;
-  margin-top: 2px !important;
-}
-
-.effect-arrow {
-  color: #c7c7cc;
+.preset-import-button-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1.5px solid #28a745;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #28a745;
   flex-shrink: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 11;
 }
 
-.preset-delete {
+.preset-import-button-small:hover {
+  background: rgba(40, 167, 69, 0.1);
+  border-color: #218838;
+  color: #218838;
+  transform: scale(1.05);
+}
+
+.preset-import-button-small:active {
+  transform: scale(0.98);
+}
+
+/* Preset item specific styles */
+.preset-item {
+  position: relative;
+}
+
+.preset-item .effect-dialog-info {
+  margin-left: 0;
+}
+
+.preset-item::after {
+  left: 24px !important;
+}
+
+.preset-item-actions {
   position: absolute;
-  right: 24px;
+  right: 48px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.preset-item:hover .preset-item-actions {
+  opacity: 1;
+}
+
+.preset-delete-icon,
+.preset-export-icon {
   background: transparent;
   border: none;
-  padding: 8px;
+  padding: 6px;
   color: #8e8e93;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s;
 }
 
-.preset-delete:hover {
+.preset-delete-icon:hover {
   background: rgba(255, 68, 68, 0.1);
   color: #ff4444;
 }
 
-/* Save preset input container */
-.save-preset-input-container {
-  padding: 0 24px;
+.preset-export-icon:hover {
+  background: rgba(0, 122, 255, 0.1);
+  color: #007AFF;
+}
+
+/* Save dialog styles */
+.preset-save-dialog {
+  padding: 24px;
+}
+
+.preset-save-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 24px 0;
+}
+
+.preset-save-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.preset-name-input,
-.preset-description-input {
+.preset-input {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  color: #fff;
+  color: #000000;
   font-size: 14px;
+  font-family: inherit;
   outline: none;
   transition: all 0.2s;
+  resize: none;
 }
 
-.preset-name-input:focus,
-.preset-description-input:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+.preset-input:focus {
+  background: #ffffff;
+  border-color: #007AFF;
+  color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
-.preset-name-input::placeholder,
-.preset-description-input::placeholder {
+.preset-input::placeholder {
   color: #6e6e73;
 }
 
-.save-preset-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
+.preset-description-textarea {
+  min-height: 80px;
 }
 
-.save-preset-confirm,
-.save-preset-cancel {
-  padding: 8px 16px;
+.preset-save-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.preset-button {
+  flex: 1;
+  padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
 }
 
-.save-preset-confirm {
+.preset-button-primary {
   background: #007AFF;
   color: white;
 }
 
-.save-preset-confirm:hover:not(:disabled) {
+.preset-button-primary:hover:not(:disabled) {
   background: #0051D5;
 }
 
-.save-preset-confirm:disabled {
+.preset-button-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.save-preset-cancel {
+.preset-button-secondary {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.save-preset-cancel:hover {
+.preset-button-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+.preset-button-danger {
+  background: #DC3545;
+  color: white;
+}
+
+.preset-button-danger:hover {
+  background: #B02A37;
+}
+
+.preset-confirm-text {
+  font-size: 14px;
+  color: #000000;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+/* Empty state */
+.preset-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #000000;
+}
+
+.preset-empty-state svg {
+  margin: 0 auto 16px;
+  opacity: 0.3;
+  color: #000000;
+}
+
+.preset-empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 8px 0;
+}
+
+.preset-empty-state p {
+  font-size: 14px;
+  margin: 0;
+  color: #000000;
+}
+
 
 
