@@ -137,6 +137,18 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
           <path d="M2 2H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 2"/>
         </svg>
       )
+    },
+    {
+      type: 'spectralcompressor',
+      name: 'Spectral Comp',
+      description: 'Frequency-domain compression',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 14V10M4 14V8M6 14V9M8 14V6M10 14V8M12 14V7M14 14V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 6V2M4 4V2M6 5V2M8 2V2M10 4V2M12 3V2M14 7V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+          <path d="M1 8H15" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeDasharray="1 2"/>
+        </svg>
+      )
     }
   ];
 

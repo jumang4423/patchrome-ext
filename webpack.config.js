@@ -59,7 +59,8 @@ module.exports = (env, argv) => {
           { from: 'logo.png', to: 'logo.png' },
           { from: 'jumango.gif', to: 'jumango.gif' },
           { from: 'src/inject.js', to: 'inject.js' },
-          { from: 'src/worklets/spectral-gate-processor.js', to: 'src/worklets/spectral-gate-processor.js' }
+          { from: 'src/worklets/spectral-gate-processor.js', to: 'src/worklets/spectral-gate-processor.js' },
+          { from: 'src/worklets/spectral-compressor-processor.js', to: 'src/worklets/spectral-compressor-processor.js' }
         ]
       }),
       new HtmlPlugin({

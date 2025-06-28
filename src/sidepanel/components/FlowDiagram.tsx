@@ -126,6 +126,14 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         baseNode.params = { 
           cutoff: node.data.cutoff !== undefined ? node.data.cutoff : -20
         };
+      } else if (node.data.type === 'spectralcompressor') {
+        baseNode.params = { 
+          attack: node.data.attack !== undefined ? node.data.attack : 30,
+          release: node.data.release !== undefined ? node.data.release : 200,
+          inputGain: node.data.inputGain !== undefined ? node.data.inputGain : 10,
+          threshold: node.data.threshold !== undefined ? node.data.threshold : -45.1,
+          ratio: node.data.ratio !== undefined ? node.data.ratio : 1.2
+        };
       }
       
       return baseNode;
@@ -380,6 +388,23 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           data: {
             type: 'spectralgate' as const,
             cutoff: node.params.cutoff !== undefined ? node.params.cutoff : -20,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id)
+          }
+        };
+      } else if (node.type === 'spectralcompressor') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'spectralcompressor' as const,
+            attack: node.params.attack !== undefined ? node.params.attack : 30,
+            release: node.params.release !== undefined ? node.params.release : 200,
+            inputGain: node.params.inputGain !== undefined ? node.params.inputGain : 10,
+            threshold: node.params.threshold !== undefined ? node.params.threshold : -45.1,
+            ratio: node.params.ratio !== undefined ? node.params.ratio : 1.2,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -849,6 +874,35 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         data: { 
           type: 'spectralgate' as const,
           cutoff: -20,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId)
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'spectralcompressor') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'spectralcompressor' as const,
+          ...AUDIO_PARAM_DEFAULTS.spectralcompressor,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);

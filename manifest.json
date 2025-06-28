@@ -36,7 +36,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["inject.js", "src/worklets/spectral-gate-processor.js"],
+      "resources": ["inject.js", "src/worklets/spectral-gate-processor.js", "src/worklets/spectral-compressor-processor.js"],
       "matches": ["<all_urls>"]
     }
   ]

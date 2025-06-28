@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, PhaserParamDOM, FlangerParamDOM, SpectralGateParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
+import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, PhaserParamDOM, FlangerParamDOM, SpectralGateParamDOM, SpectralCompressorParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
 import { Switch } from '../../../components/ui/switch';
 import {
   Select,
@@ -93,6 +93,13 @@ const nodeIcons = {
       <path d="M3 4H21" stroke="#00d2d3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 3"/>
     </svg>
   ),
+  spectralcompressor: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 20V15M6 20V12M9 20V13M12 20V8M15 20V12M18 20V10M21 20V16" stroke="#fd79a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M3 9V4M6 6V4M9 7V4M12 4V4M15 6V4M18 5V4M21 10V4" stroke="#fd79a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+      <path d="M2 12H22" stroke="#fd79a8" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 3"/>
+    </svg>
+  ),
   output: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="#4caf50"/>
@@ -112,6 +119,7 @@ const nodeHeaders = {
   phaser: 'Phaser',
   flanger: 'Flanger',
   spectralgate: 'Spectral Gate',
+  spectralcompressor: 'Spectral Comp',
   output: 'Audio Output'
 };
 
@@ -139,6 +147,8 @@ const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
       return FlangerParamDOM;
     case 'spectralgate':
       return SpectralGateParamDOM;
+    case 'spectralcompressor':
+      return SpectralCompressorParamDOM;
     case 'output':
       return OutputParamDOM;
     default:

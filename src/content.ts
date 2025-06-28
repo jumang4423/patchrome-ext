@@ -23,10 +23,12 @@ function injectScript() {
 function updatePageSettings() {
   // Also send the worklet URLs since inject.js can't access chrome.runtime
   const workletUrl = chrome.runtime.getURL('src/worklets/spectral-gate-processor.js');
+  const compressorWorkletUrl = chrome.runtime.getURL('src/worklets/spectral-compressor-processor.js');
   window.postMessage({
     type: 'PATCHROME_SETTINGS',
     settings: currentSettings,
-    workletUrl: workletUrl
+    workletUrl: workletUrl,
+    compressorWorkletUrl: compressorWorkletUrl
   }, '*');
 }
 

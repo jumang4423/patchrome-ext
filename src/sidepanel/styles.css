@@ -847,6 +847,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #00d2d3;
 }
 
+.effect-item-icon.spectralcompressor {
+  background: rgba(253, 121, 168, 0.1);
+  color: #fd79a8;
+}
+
 .effect-item-shortcut {
   font-size: 12px;
   color: #6c757d;
@@ -1167,6 +1172,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .effect-dialog-icon.spectralgate {
   background: rgba(0, 210, 211, 0.1);
   color: #00d2d3;
+}
+
+.effect-dialog-icon.spectralcompressor {
+  background: rgba(253, 121, 168, 0.1);
+  color: #fd79a8;
 }
 
 .effect-dialog-info {

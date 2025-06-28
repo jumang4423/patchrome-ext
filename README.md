@@ -1,164 +1,145 @@
-<div align="center">
-  <img src="logo.png" alt="Patchrome Logo" />
-  
-  # Patchrome
-</div>
+# Patchrome
 
-A Chrome extension that brings modular audio effects processing to your browser. Build custom audio effect chains with a visual node-based interface and apply them to any audio/video content in real-time.
+A powerful Chrome extension for real-time audio manipulation on web pages. Process any audio playing in your browser with a modular effects chain using visual node-based routing.
 
-## Features
+## Overview
 
-### 🎛️ Visual Audio Routing
-- Intuitive drag-and-drop node interface
-- Connect audio effects in any order
-- Real-time visual feedback of your signal chain
-- Inspired by modular synthesizers and audio production software
+Patchrome is a Chrome extension that intercepts and processes audio from web pages in real-time. It provides a visual node-based interface where you can build custom audio effect chains by connecting various audio processing nodes together.
 
-### 🎵 Built-in Audio Effects
+### Key Features
 
-- **Speed Control** (0.5x - 1.5x)
-  - Adjust playback speed with optional pitch preservation
-  - Perfect for slowing down tutorials or speeding up podcasts
-
-- **Reverb**
-  - Add spatial depth to any audio
-  - Adjustable room size, decay time, and wet/dry mix
-  - From subtle ambience to massive halls
-
-- **Delay**
-  - Create echoes and rhythmic repeats
-  - Control delay time, feedback, and mix
-  - Sync to musical timing or create ambient textures
-
-- **Utility (Gain & Pan)**
-  - Precise volume control (-60dB to +12dB)
-  - Stereo panning for spatial positioning
-  - Phase reverse option for correcting phase issues
-  - Essential for balancing your effect chain
-
-- **Limiter**
-  - Prevent audio clipping and distortion
-  - Adjustable threshold (-60dB to 0dB)
-  - Hard knee limiting with 20:1 ratio
-  - Fast attack (3ms) for transparent limiting
-
-- **Distortion**
-  - Add harmonic richness and grit
-  - Drive control (0-100%) for distortion intensity
-  - Wet/dry mix for parallel processing
-  - Soft clipping algorithm with 4x oversampling
-
-### 🚀 Technical Highlights
-
-- Built on Web Audio API for low-latency processing
-- Works with all HTML5 audio/video elements
-- Special optimization for SoundCloud and Web Audio API sources
-- Wet/dry mixing on reverb, delay, and distortion effects
-- Persistent settings across browser sessions
+- **Visual Node Editor**: Drag-and-drop interface for building audio effect chains
+- **Real-time Processing**: All effects are applied in real-time with minimal latency
+- **Multiple Effect Types**: 
+  - **Input/Output**: Audio source and destination nodes
+  - **Effects**: Reverb, Delay, Distortion, Phaser, Flanger, Equalizer
+  - **Utilities**: Gain/Pan control, Limiter
+  - **Generators**: Tone Generator
+  - **Spectral Effects**: Spectral Gate (frequency-selective gating)
+- **Per-site Compatibility**: Works on most websites with HTML5 audio/video
+- **Persistent Settings**: Your effect chains are saved per session
 
 ## Installation
 
-### From Chrome Web Store
-*(Coming soon)*
+1. Clone this repository
+2. Run `npm install` to install dependencies
+3. Run `npm run build` to build the extension
+4. Open Chrome and navigate to `chrome://extensions`
+5. Enable "Developer mode"
+6. Click "Load unpacked" and select the `dist` folder
 
-### From Source
+## Usage Tips
 
-1. Clone this repository:
-```bash
-git clone https://github.com/yourusername/patchrome-ext.git
-cd patchrome-ext
-```
+### Quick Actions
 
-2. Install dependencies:
-```bash
-npm install
-```
+- **Right-click on any node connection** → Opens the "Add Effect" menu instantly
+- **Double-click on any slider** → Enter precise values manually
+- **Drag nodes** → Rearrange your effect chain visually
+- **Click the power button** → Enable/disable all effects globally
 
-3. Build the extension:
-```bash
-npm run build
-```
+### Keyboard Shortcuts
 
-4. Load in Chrome:
-   - Open `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `dist` folder
+- **Delete/Backspace** → Remove selected node (except Input/Output nodes)
+- **Escape** → Close dialogs
 
-## Usage
+### Effect Parameters
 
-1. Click the Patchrome icon in your Chrome toolbar while on a page with audio/video
-2. The side panel will open showing the audio routing interface
-3. Drag effect nodes from the "Add Effect" menu
-4. Connect nodes by dragging from output to input ports
-5. Adjust parameters using the controls on each node
-6. Your effects are applied in real-time!
+#### Speed Control (Input Node)
+- Adjust playback speed from 0.25x to 4x
+- Preserves pitch automatically
+
+#### Reverb
+- **Mix**: Dry/wet balance (0-100%)
+- **Size**: Room size simulation (0-100%)
+- **Decay**: Reverb tail length in milliseconds
+
+#### Delay
+- **Delay Time**: Echo delay in milliseconds (0-2000ms)
+- **Feedback**: Echo repetitions (0-100%)
+- **Mix**: Dry/wet balance (0-100%)
+
+#### Utility
+- **Volume**: Gain control in dB (-60 to +12 dB)
+- **Pan**: Stereo positioning (-100 to +100)
+- **Phase Reverse**: Invert right channel phase
+
+#### Distortion
+- **Drive**: Distortion amount (0-100)
+- **Tone**: High-frequency content (0-100)
+- **Mix**: Dry/wet balance (0-100%)
+
+#### Equalizer
+- **Low**: ±12 dB at 320 Hz
+- **Mid**: ±12 dB at 1000 Hz  
+- **High**: ±12 dB at 3200 Hz
+
+#### Limiter
+- **Threshold**: Limiting threshold in dB (-30 to 0 dB)
+- **Release**: Release time in milliseconds (1-1000ms)
+
+## Performance Notes
+
+The extension uses Web Audio API for processing, which means:
+- Effects are applied at the browser level
+- CPU usage scales with effect complexity
+- Some effects (especially spectral processing) may be CPU-intensive
+
+## Known Issues & TODO
+
+### Platform-Specific Issues
+
+- **YouTube**: Heavy CPU usage when multiple effects are chained, especially with spectral effects. Consider using simpler effect chains for better performance.
+- **Twitter/X**: Video players may experience higher latency with complex effect chains due to the platform's audio handling.
+- **SoundCloud**: Works well with most effects. The extension has special handling for SoundCloud's audio system.
+
+### TODO List
+
+- [ ] Add more spectral effects (Spectral Compressor is prepared but not integrated)
+- [ ] Implement preset system for saving/loading effect chains
+- [ ] Add visualization (spectrum analyzer, waveform display)
+- [ ] Optimize performance for complex effect chains
+- [ ] Add MIDI control support
+- [ ] Implement sidechain compression
+- [ ] Add more modulation effects (Chorus, Tremolo, Vibrato)
+- [ ] Create effect chain templates for common use cases
+- [ ] Add A/B comparison feature
+- [ ] Implement effect automation/LFO modulation
 
 ## Development
-
-### Prerequisites
-- Node.js 14+
-- npm or yarn
 
 ### Setup
 ```bash
 npm install
-npm run dev  # Start development build with watch mode
+npm run dev  # Watch mode for development
+npm run build  # Production build
 ```
 
 ### Project Structure
 ```
-src/
-├── background.ts       # Extension background script
-├── content.ts         # Content script for page injection
-├── inject.js          # Injected script for audio interception
-├── sidepanel/         # React-based UI
-│   ├── App.tsx
-│   ├── components/    # UI components
-│   └── styles.css
-└── shared/           # Shared types and utilities
+patchrome-ext/
+├── src/
+│   ├── background.ts      # Extension background script
+│   ├── content.ts         # Content script injected into pages
+│   ├── inject.js          # Main audio processing logic
+│   ├── sidepanel/         # React-based side panel UI
+│   │   ├── App.tsx
+│   │   └── components/    # UI components
+│   ├── worklets/          # Audio worklet processors
+│   └── types/             # TypeScript definitions
+├── manifest.json          # Chrome extension manifest
+└── webpack.config.js      # Build configuration
 ```
 
-### Building
-```bash
-npm run build    # Production build
-npm run dev      # Development build with watch
-```
+### Adding New Effects
 
-## Use Cases
+See [ADD_EFFECT_INSTRUCTIONS.md](ADD_EFFECT_INSTRUCTIONS.md) for detailed instructions on adding new effects.
 
-- **Education**: Slow down tutorial videos while maintaining clarity
-- **Podcasts**: Add reverb for a more professional sound
-- **Music Production**: Experiment with effects on reference tracks
-- **Accessibility**: Adjust audio playback to personal preferences
-- **Sound Design**: Create unique audio atmospheres from any source
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Areas for Contribution
-- New audio effects (filters, compression, EQ, etc.)
-- UI/UX improvements
-- Performance optimizations
-- Browser compatibility enhancements
-- Documentation and tutorials
+For audio worklet-based effects, see [ADD_AUDIO_WORKLET_CUSTOM_EFFECT_INSTRUCTIONS.md](ADD_AUDIO_WORKLET_CUSTOM_EFFECT_INSTRUCTIONS.md).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is open source. Feel free to use and modify as needed.
 
-## Acknowledgments
+## Contributing
 
-- Built with [React](https://reactjs.org/) and [React Flow](https://reactflow.dev/)
-- Audio processing powered by [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-- UI components from [shadcn/ui](https://ui.shadcn.com/)
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/patchrome-ext/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/patchrome-ext/discussions)
-
----
-
-Made with 🎵 by audio enthusiasts, for audio enthusiasts
+Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.

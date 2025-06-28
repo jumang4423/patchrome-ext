@@ -1,5 +1,5 @@
-export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'output';
-export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor';
 export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean' | 'speed' | 'waveform' | 'filtertype';
 
 export interface BaseNode {
@@ -409,6 +409,62 @@ export const SpectralGateParamDOM: ParamConfig[] = [
   }
 ];
 
+// spectralcompressor
+export interface SpectralCompressorNode extends BaseNode {
+  type: 'spectralcompressor';
+  data: {
+    attack: number;
+    release: number;
+    inputGain: number;
+    threshold: number;
+    ratio: number;
+  };
+  deletable: true;
+}
+
+export const SpectralCompressorParamDOM: ParamConfig[] = [
+  {
+    label: 'Threshold',
+    key: 'threshold',
+    min: -60,
+    max: 0,
+    step: 0.1,
+    valueType: 'decibels'
+  },
+  {
+    label: 'Ratio',
+    key: 'ratio',
+    min: 0.5,
+    max: 1.5,
+    step: 0.01,
+    valueType: 'number'
+  },
+  {
+    label: 'Attack',
+    key: 'attack',
+    min: 0.1,
+    max: 100,
+    step: 0.1,
+    valueType: 'milliseconds'
+  },
+  {
+    label: 'Release',
+    key: 'release',
+    min: 1,
+    max: 500,
+    step: 0.1,
+    valueType: 'milliseconds'
+  },
+  {
+    label: 'Input Gain',
+    key: 'inputGain',
+    min: -24,
+    max: 24,
+    step: 0.1,
+    valueType: 'decibels'
+  }
+];
+
 
 // output
 
@@ -420,7 +476,7 @@ export interface OutputNode extends BaseNode {
 
 export const OutputParamDOM: ParamConfig[] = [];
 
-export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | SpectralGateNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | SpectralGateNode | SpectralCompressorNode | OutputNode;
 
 export interface Connection {
   id: string;

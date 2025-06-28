@@ -50,6 +50,13 @@ export const AUDIO_PARAM_DEFAULTS = {
   spectralgate: {
     cutoff: -40
   },
+  spectralcompressor: {
+    threshold: -45.1,
+    ratio: 1.2,
+    attack: 30,
+    release: 200,
+    inputGain: 10
+  },
   output: {}
 } as const;
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Download, Upload, Info } from 'lucide-react';
+import { Menu, Download, Upload, Info, ExternalLink } from 'lucide-react';
 
 interface MenuButtonProps {
   onAction: (action: 'import' | 'export') => void;
@@ -90,6 +90,20 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onAction, onInfoClick }) => {
                   <Info size={16} />
                 </div>
                 <span>Info</span>
+              </div>
+            </button>
+            <button
+              className="menu-dropdown-item"
+              onClick={() => {
+                window.open('https://github.com/jumang4423/patchrome-ext/blob/main/README.md', '_blank');
+                setIsOpen(false);
+              }}
+            >
+              <div className="menu-item-content">
+                <div className="menu-item-icon">
+                  <ExternalLink size={16} />
+                </div>
+                <span>Docs</span>
               </div>
             </button>
           </div>

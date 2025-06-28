@@ -2,7 +2,7 @@
 
 export interface NodeData {
   id: string;
-  type: 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'output';
+  type: 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'output';
   params: Record<string, number | string>;
 }
 
