@@ -15,11 +15,11 @@ Patchrome is a Chrome extension that intercepts and processes audio from web pag
 - **Visual Node Editor**: Drag-and-drop interface for building audio effect chains
 - **Real-time Processing**: All effects are applied in real-time with minimal latency
 - **Multiple Effect Types**: 
-  - **Input/Output**: Audio source and destination nodes
-  - **Effects**: Reverb, Delay, Distortion, Phaser, Flanger, Equalizer
-  - **Utilities**: Gain/Pan control, Limiter
-  - **Generators**: Tone Generator
-  - **Spectral Effects**: Spectral Gate (frequency-selective gating)
+  - **Input/Output**: Audio source with speed control and destination nodes
+  - **Effects**: Reverb, Delay, Distortion, Phaser, Flanger, Equalizer (with multiple filter types), Bitcrusher
+  - **Utilities**: Gain/Pan control with phase inversion, Limiter
+  - **Generators**: Tone Generator (sine, triangle, sawtooth, square waves)
+  - **Spectral Effects**: Spectral Gate, Spectral Compressor, Spectral Pitch Shifter
 - **Per-site Compatibility**: Works on most websites with HTML5 audio/video
 - **Persistent Settings**: Your effect chains are saved per session
 
@@ -49,7 +49,7 @@ Patchrome is a Chrome extension that intercepts and processes audio from web pag
 ### Effect Parameters
 
 #### Speed Control (Input Node)
-- Adjust playback speed from 0.25x to 4x
+- Adjust playback speed from 0.5x to 1.5x
 - Preserves pitch automatically
 
 #### Reverb
@@ -69,17 +69,52 @@ Patchrome is a Chrome extension that intercepts and processes audio from web pag
 
 #### Distortion
 - **Drive**: Distortion amount (0-100)
-- **Tone**: High-frequency content (0-100)
 - **Mix**: Dry/wet balance (0-100%)
 
 #### Equalizer
-- **Low**: ±12 dB at 320 Hz
-- **Mid**: ±12 dB at 1000 Hz  
-- **High**: ±12 dB at 3200 Hz
+- **Filter Type**: Choose from lowpass, highpass, bandpass, or notch filters
+- **Frequency**: Adjustable from 20 Hz to 7777 Hz
+- **Q Factor**: Filter resonance/width (0.1-30)
 
 #### Limiter
-- **Threshold**: Limiting threshold in dB (-30 to 0 dB)
-- **Release**: Release time in milliseconds (1-1000ms)
+- **Threshold**: Limiting threshold in dB (-60 to 0 dB)
+
+#### Phaser
+- **Rate**: LFO speed (0.1-10 Hz)
+- **Depth**: Modulation depth (0-100%)
+- **Feedback**: Resonance amount (0-100%)
+- **Mix**: Dry/wet balance (0-100%)
+
+#### Flanger
+- **Rate**: LFO speed (0.1-10 Hz)
+- **Depth**: Modulation depth (0-100%)
+- **Feedback**: Resonance amount (-100 to +100%)
+- **Delay**: Base delay time (1-20ms)
+- **Mix**: Dry/wet balance (0-100%)
+
+#### Tone Generator
+- **Waveform**: Sine, triangle, sawtooth, or square wave
+- **Frequency**: 20-20000 Hz
+- **Volume**: Output level (-60 to 0 dB)
+
+#### Bitcrusher
+- **Mix**: Dry/wet balance (0-100%)
+- **Sample Rate**: Reduce sample rate (2000-40000 Hz)
+- **Bit Depth**: Reduce bit resolution (1-16 bits)
+
+#### Spectral Gate
+- **Cutoff**: Frequency magnitude threshold (-60 to +24 dB)
+
+#### Spectral Compressor
+- **Threshold**: Compression threshold (-60 to 0 dB)
+- **Ratio**: Compression ratio (0.5-1.5)
+- **Attack**: Attack time (0.1-100ms)
+- **Release**: Release time (1-500ms)
+- **Input Gain**: Pre-compression gain (-24 to +24 dB)
+
+#### Spectral Pitch Shifter
+- **Pitch**: Pitch shift in cents (-1200 to +1200, ±1 octave)
+- **Mix**: Dry/wet balance (0-100%)
 
 ## Performance Notes
 
@@ -98,13 +133,15 @@ The extension uses Web Audio API for processing, which means:
 
 ### TODO List
 
-- [ ] Add more spectral effects (Spectral Compressor is prepared but not integrated)
 - [ ] Implement preset system for saving/loading effect chains
 - [ ] Add visualization (spectrum analyzer, waveform display)
 - [ ] Optimize performance for complex effect chains
 - [ ] Create effect chain templates for common use cases
 - [ ] Add A/B comparison feature
 - [ ] Implement effect automation/LFO modulation
+- [ ] Add more modulation effects (Chorus, Tremolo, Ring Modulator)
+- [ ] Implement sidechain compression
+- [ ] Add frequency analyzer node for visual feedback
 
 ## Development
 
