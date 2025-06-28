@@ -138,6 +138,11 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           threshold: node.data.threshold !== undefined ? node.data.threshold : -45.1,
           ratio: node.data.ratio !== undefined ? node.data.ratio : 1.2
         };
+      } else if (node.data.type === 'spectralpitch') {
+        baseNode.params = { 
+          pitch: node.data.pitch !== undefined ? node.data.pitch : 0,
+          mix: node.data.mix !== undefined ? node.data.mix : 100
+        };
       } else if (node.data.type === 'bitcrusher') {
         baseNode.params = { 
           mix: node.data.mix !== undefined ? node.data.mix : 0,
@@ -416,6 +421,20 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             inputGain: node.params.inputGain !== undefined ? node.params.inputGain : 10,
             threshold: node.params.threshold !== undefined ? node.params.threshold : -45.1,
             ratio: node.params.ratio !== undefined ? node.params.ratio : 1.2,
+            deletable: true,
+            onChange: (key: string, value: number) => {
+              handleNodeValueChange(node.id, key, value);
+            },
+            onRemove: () => handleRemoveNode(node.id),
+          }
+        };
+      } else if (node.type === 'spectralpitch') {
+        return {
+          ...baseNode,
+          data: {
+            type: 'spectralpitch' as const,
+            pitch: node.params.pitch !== undefined ? node.params.pitch : 0,
+            mix: node.params.mix !== undefined ? node.params.mix : 100,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -940,6 +959,39 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
         const updated = [...nds, newNode];
+        saveToLocalStorage(updated, edges);
+        return updated;
+      });
+      
+      setNodeIdCounter((prev) => prev + 1);
+    } else if (effectType === 'spectralpitch') {
+      const viewport = getViewport();
+      
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+      
+      const newNodeId = nodeIdCounter.toString();
+      const newNode: Node = {
+        id: newNodeId,
+        type: 'unifiedAudio',
+        data: { 
+          type: 'spectralpitch' as const,
+          pitch: 0,
+          mix: 100,
+          deletable: true,
+          onChange: (key: string, value: number) => {
+            handleNodeValueChange(newNodeId, key, value);
+          },
+          onRemove: () => handleRemoveNode(newNodeId),
+        },
+        position: { x: centerX - 110, y: centerY - 75 },
+        selected: true,
+      };
+      // Add to both ReactFlow nodes and save immediately
+      setNodes((nds) => {
+        // Deselect all existing nodes
+        const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
+        const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });

@@ -1,5 +1,5 @@
-export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'bitcrusher' | 'output';
-export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'bitcrusher';
+export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'spectralpitch' | 'bitcrusher' | 'output';
+export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'spectralpitch' | 'bitcrusher';
 export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean' | 'speed' | 'waveform' | 'filtertype';
 
 export interface BaseNode {
@@ -465,6 +465,35 @@ export const SpectralCompressorParamDOM: ParamConfig[] = [
   }
 ];
 
+// spectralpitch
+export interface SpectralPitchNode extends BaseNode {
+  type: 'spectralpitch';
+  data: {
+    pitch: number;
+    mix: number;
+  };
+  deletable: true;
+}
+
+export const SpectralPitchParamDOM: ParamConfig[] = [
+  {
+    label: 'Pitch',
+    key: 'pitch',
+    min: -1200,
+    max: 1200,
+    step: 10,
+    valueType: 'number'
+  },
+  {
+    label: 'Mix',
+    key: 'mix',
+    min: 0,
+    max: 100,
+    step: 1,
+    valueType: 'percentage'
+  }
+];
+
 // bitcrusher
 export interface BitcrusherNode extends BaseNode {
   type: 'bitcrusher';
@@ -514,7 +543,7 @@ export interface OutputNode extends BaseNode {
 
 export const OutputParamDOM: ParamConfig[] = [];
 
-export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | SpectralGateNode | SpectralCompressorNode | BitcrusherNode | OutputNode;
+export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | SpectralGateNode | SpectralCompressorNode | SpectralPitchNode | BitcrusherNode | OutputNode;
 
 export interface Connection {
   id: string;

@@ -161,6 +161,19 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
           <path d="M2 2H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 2"/>
         </svg>
       )
+    },
+    {
+      type: 'spectralpitch',
+      name: 'Spectral Pitch',
+      description: 'Frequency-domain pitch shifting',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 12L14 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 8L14 8" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 2" opacity="0.5"/>
+          <path d="M12 2L14 4L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M4 10L2 12L4 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
     }
   ];
 

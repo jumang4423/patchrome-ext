@@ -19,6 +19,7 @@
   // Store the worklet URLs (will be set by content script)
   let spectralGateWorkletUrl = null;
   let spectralCompressorWorkletUrl = null;
+  let spectralPitchWorkletUrl = null;
   
   // Keep track of processed elements
   const processedElements = new WeakSet();
@@ -669,6 +670,64 @@
           params: node.params,
           audioContext
         });
+      } else if (node.type === 'spectralpitch') {
+        // Create spectral pitch shifter effect using AudioWorklet
+        const inputGain = audioContext.createGain();
+        const merger = audioContext.createGain();
+        
+        // Try to create AudioWorkletNode
+        let spectralPitchNode = null;
+        
+        // Check if AudioWorklet is supported
+        if (audioContext.audioWorklet) {
+          try {
+            // Use the worklet URL passed from content script
+            if (!spectralPitchWorkletUrl) {
+              throw new Error('No spectral pitch worklet URL available');
+            }
+            
+            await audioContext.audioWorklet.addModule(spectralPitchWorkletUrl);
+            
+            // Create the AudioWorkletNode
+            spectralPitchNode = new AudioWorkletNode(audioContext, 'spectral-pitch-processor');
+            
+            // Set parameters
+            const pitchValue = node.params.pitch !== undefined ? node.params.pitch : 0;
+            const mixValue = node.params.mix !== undefined ? node.params.mix : 100;
+            
+            const pitchParam = spectralPitchNode.parameters.get('pitch');
+            const mixParam = spectralPitchNode.parameters.get('mix');
+            
+            if (pitchParam) {
+              pitchParam.value = pitchValue;
+            }
+            if (mixParam) {
+              mixParam.value = mixValue;
+            }
+            
+            // Connect routing
+            inputGain.connect(spectralPitchNode);
+            spectralPitchNode.connect(merger);
+          } catch (e) {
+            console.error('Patchrome: Failed to create spectral pitch worklet:', e);
+            // Fallback: connect directly
+            inputGain.connect(merger);
+          }
+        } else {
+          console.warn('Patchrome: AudioWorklet not supported, spectral pitch bypassed');
+          inputGain.connect(merger);
+        }
+        
+        nodes.set(node.id, {
+          type: 'spectralpitch',
+          input: inputGain,
+          output: merger,
+          inputGain,
+          merger,
+          spectralPitchNode,
+          params: node.params,
+          audioContext
+        });
       } else if (node.type === 'bitcrusher') {
         // Create bitcrusher effect chain
         const inputGain = audioContext.createGain();
@@ -806,6 +865,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect to spectral compressor input
             sourceNode.audioNode.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect to spectral pitch input
+            sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect to bitcrusher input
             sourceNode.audioNode.connect(targetNode.inputGain);
@@ -842,6 +904,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect reverb output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect reverb output to spectral pitch input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect reverb output to bitcrusher input
@@ -880,6 +945,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect delay output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect delay output to spectral pitch input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect delay output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
@@ -916,6 +984,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect utility output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect utility output to spectral pitch input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect utility output to bitcrusher input
@@ -954,6 +1025,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect limiter output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect limiter output to spectral pitch input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect limiter output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
@@ -990,6 +1064,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect distortion output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect distortion output to spectral pitch input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect distortion output to bitcrusher input
@@ -1028,6 +1105,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect tonegenerator output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect tonegenerator output to spectral pitch input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect tonegenerator output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
@@ -1064,6 +1144,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect equalizer output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect equalizer output to spectral pitch input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect equalizer output to bitcrusher input
@@ -1102,6 +1185,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect phaser output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect phaser output to spectral pitch input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect phaser output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
@@ -1138,6 +1224,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect flanger output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect flanger output to spectral pitch input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect flanger output to bitcrusher input
@@ -1176,6 +1265,9 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect spectral gate output to spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect spectral gate output to spectral pitch input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect spectral gate output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
@@ -1213,8 +1305,51 @@
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect spectral compressor output to next spectral compressor input
             sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect spectral compressor output to spectral pitch input
+            sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect spectral compressor output to bitcrusher input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'output') {
+            sourceNode.output.connect(targetNode.audioNode);
+          }
+        } else if (sourceNode.type === 'spectralpitch') {
+          if (targetNode.type === 'reverb') {
+            // Connect spectral pitch output to reverb input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'delay') {
+            // Connect spectral pitch output to delay input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'utility') {
+            // Connect spectral pitch output to utility input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'limiter') {
+            // Connect spectral pitch output to limiter input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'distortion') {
+            // Connect spectral pitch output to distortion input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'equalizer') {
+            // Connect spectral pitch output to equalizer input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'phaser') {
+            // Connect spectral pitch output to phaser input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'flanger') {
+            // Connect spectral pitch output to flanger input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralgate') {
+            // Connect spectral pitch output to spectral gate input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralcompressor') {
+            // Connect spectral pitch output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect spectral pitch output to next spectral pitch input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'bitcrusher') {
+            // Connect spectral pitch output to bitcrusher input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.output.connect(targetNode.audioNode);
@@ -1249,6 +1384,9 @@
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralcompressor') {
             // Connect bitcrusher output to spectral compressor input
+            sourceNode.output.connect(targetNode.inputGain);
+          } else if (targetNode.type === 'spectralpitch') {
+            // Connect bitcrusher output to spectral pitch input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'bitcrusher') {
             // Connect bitcrusher output to next bitcrusher input
@@ -1582,6 +1720,29 @@
         
         // Always update the stored parameters
         node.params = { ...graphNode.params };
+      } else if (node.type === 'spectralpitch') {
+        if (node.spectralPitchNode) {
+          // Update parameters
+          const pitchValue = graphNode.params.pitch !== undefined ? graphNode.params.pitch : 0;
+          const mixValue = graphNode.params.mix !== undefined ? graphNode.params.mix : 100;
+          
+          // Use setValueAtTime for immediate parameter changes
+          const currentTime = audioContexts.get(element)?.currentTime || 0;
+          const pitchParam = node.spectralPitchNode.parameters.get('pitch');
+          const mixParam = node.spectralPitchNode.parameters.get('mix');
+          
+          if (pitchParam) {
+            pitchParam.setValueAtTime(pitchValue, currentTime);
+          }
+          if (mixParam) {
+            mixParam.setValueAtTime(mixValue, currentTime);
+          }
+          
+          console.log(`Patchrome: Updated spectralpitch ${nodeId} - pitch: ${pitchValue} cents, mix: ${mixValue}%`);
+        }
+        
+        // Always update the stored parameters
+        node.params = { ...graphNode.params };
       } else if (node.type === 'bitcrusher' && node.wetGain && node.dryGain) {
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
@@ -1724,6 +1885,12 @@
       }
       if (node.spectralGateNode) {
         try { node.spectralGateNode.disconnect(); } catch(e) {}
+      }
+      if (node.spectralCompressorNode) {
+        try { node.spectralCompressorNode.disconnect(); } catch(e) {}
+      }
+      if (node.spectralPitchNode) {
+        try { node.spectralPitchNode.disconnect(); } catch(e) {}
       }
       if (node.masterGain) {
         try { node.masterGain.disconnect(); } catch(e) {}
@@ -1880,6 +2047,9 @@
       }
       if (event.data.compressorWorkletUrl) {
         spectralCompressorWorkletUrl = event.data.compressorWorkletUrl;
+      }
+      if (event.data.pitchWorkletUrl) {
+        spectralPitchWorkletUrl = event.data.pitchWorkletUrl;
       }
       
       const newSettings = event.data.settings;

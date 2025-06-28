@@ -1190,6 +1190,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #fd79a8;
 }
 
+.effect-dialog-icon.spectralpitch {
+  background: rgba(162, 155, 254, 0.1);
+  color: #a29bfe;
+}
+
 .effect-dialog-icon.bitcrusher {
   background: rgba(250, 177, 160, 0.1);
   color: #fab1a0;

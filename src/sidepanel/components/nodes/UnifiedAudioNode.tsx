@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, PhaserParamDOM, FlangerParamDOM, SpectralGateParamDOM, SpectralCompressorParamDOM, BitcrusherParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
+import { AudioNode, InputParamDOM, ReverbParamDOM, DelayParamDOM, UtilityParamDOM, LimiterParamDOM, DistortionParamDOM, ToneGeneratorParamDOM, EqualizerParamDOM, PhaserParamDOM, FlangerParamDOM, SpectralGateParamDOM, SpectralCompressorParamDOM, SpectralPitchParamDOM, BitcrusherParamDOM, OutputParamDOM, ValueType, ParamConfig } from '../../../types/nodeGraphStructure';
 import { Switch } from '../../../components/ui/switch';
 import {
   Select,
@@ -100,6 +100,14 @@ const nodeIcons = {
       <path d="M2 12H22" stroke="#fd79a8" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 3"/>
     </svg>
   ),
+  spectralpitch: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 18L21 6" stroke="#a29bfe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M3 12L21 12" stroke="#a29bfe" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 3" opacity="0.5"/>
+      <path d="M18 3L21 6L18 9" stroke="#a29bfe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 15L3 18L6 21" stroke="#a29bfe" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
   bitcrusher: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="3" y="9" width="4" height="6" stroke="#fab1a0" strokeWidth="2"/>
@@ -127,6 +135,7 @@ const nodeHeaders = {
   flanger: 'Flanger',
   spectralgate: 'Spectral Gate',
   spectralcompressor: 'Spectral Comp',
+  spectralpitch: 'Spectral Pitch',
   bitcrusher: 'Bit Crusher',
   output: 'Audio Output'
 };
@@ -157,6 +166,8 @@ const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
       return SpectralGateParamDOM;
     case 'spectralcompressor':
       return SpectralCompressorParamDOM;
+    case 'spectralpitch':
+      return SpectralPitchParamDOM;
     case 'bitcrusher':
       return BitcrusherParamDOM;
     case 'output':
