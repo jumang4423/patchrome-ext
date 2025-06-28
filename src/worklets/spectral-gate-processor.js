@@ -33,7 +33,6 @@ class SpectralGateProcessor extends AudioWorkletProcessor {
       };
     }
     
-    console.log('Patchrome: SpectralGateProcessor initialized with proper windowing');
   }
   
   // FFT implementation

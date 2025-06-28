@@ -186,7 +186,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
       ? parseInt(rawValue, 10) 
       : parseFloat(rawValue);
     
-    console.log(`[UnifiedAudioNode] Parameter changed - Type: ${type}, Key: ${key}, Value: ${newValue}, ValueType: ${valueType}`);
     
     if (onChange) {
       onChange(key, newValue);
@@ -195,7 +194,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
 
   const handleCheckboxChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
-    console.log(`[UnifiedAudioNode] Boolean parameter changed - Type: ${type}, Key: ${key}, Value: ${newValue}`);
     
     if (onChange) {
       onChange(key, newValue ? 1 : 0);

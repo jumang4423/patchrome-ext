@@ -1,6 +1,5 @@
 import { Settings } from './shared/types';
 
-console.log('[Patchrome Content] Content script loaded!');
 
 let currentSettings: Settings = {
   enabled: true,
@@ -22,7 +21,6 @@ function injectScript() {
 }
 
 function updatePageSettings() {
-  console.log(`[Content] Sending settings to inject.js:`, currentSettings);
   // Also send the worklet URLs since inject.js can't access chrome.runtime
   const workletUrl = chrome.runtime.getURL('src/worklets/spectral-gate-processor.js');
   window.postMessage({
@@ -41,7 +39,6 @@ chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (response) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'SETTINGS_UPDATED') {
-    console.log(`[Content] Received SETTINGS_UPDATED from background:`, request.settings);
     currentSettings = request.settings;
     updatePageSettings();
   }

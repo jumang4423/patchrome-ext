@@ -10,7 +10,6 @@ const App: React.FC = () => {
   useEffect(() => {
     chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (response) => {
       if (chrome.runtime.lastError) {
-        console.error('Error loading settings:', chrome.runtime.lastError);
         // Only use default settings if there's an error loading
         setSettings({
           enabled: false,
@@ -27,7 +26,6 @@ const App: React.FC = () => {
           }
         });
       } else if (response) {
-        console.log('Loaded settings from background:', response);
         setSettings(response);
       }
       setIsLoading(false);
@@ -35,7 +33,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleGraphChange = useCallback((audioGraph: AudioGraphData) => {
-    console.log(`[App] handleGraphChange called with audioGraph:`, audioGraph);
     
     setSettings(prevSettings => {
       const newSettings = {
@@ -43,7 +40,6 @@ const App: React.FC = () => {
         audioGraph
       };
       
-      console.log(`[App] Sending UPDATE_SETTINGS to background with settings:`, newSettings);
       
       // Save settings after state update
       chrome.runtime.sendMessage({
@@ -51,9 +47,7 @@ const App: React.FC = () => {
         settings: newSettings
       }, (response) => {
         if (chrome.runtime.lastError) {
-          console.error('Error saving settings:', chrome.runtime.lastError.message);
         } else {
-          console.log(`[App] UPDATE_SETTINGS response:`, response);
         }
       });
       
@@ -73,7 +67,6 @@ const App: React.FC = () => {
         settings: newSettings
       }, (response) => {
         if (chrome.runtime.lastError) {
-          console.error('Error saving settings:', chrome.runtime.lastError.message);
         }
       });
       

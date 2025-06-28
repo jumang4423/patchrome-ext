@@ -2,7 +2,6 @@
 (function() {
   'use strict';
   
-  console.log('Patchrome: inject.js loaded!');
   
   let settings = {
     enabled: true,
@@ -560,53 +559,39 @@
         // Try to create AudioWorkletNode
         let spectralGateNode = null;
         
-        console.log('Patchrome: Starting spectral gate setup...');
-        console.log('Patchrome: AudioContext state:', audioContext.state);
-        console.log('Patchrome: Saved worklet URL:', spectralGateWorkletUrl);
         
         // Check if AudioWorklet is supported
         if (audioContext.audioWorklet) {
-          console.log('Patchrome: AudioWorklet is supported');
           
           try {
             // Use the worklet URL passed from content script
             if (!spectralGateWorkletUrl) {
-              console.error('Patchrome: No worklet URL available! Cannot create spectral gate.');
               throw new Error('No worklet URL available');
             }
             
-            console.log('Patchrome: Loading worklet from:', spectralGateWorkletUrl);
             
             await audioContext.audioWorklet.addModule(spectralGateWorkletUrl);
-            console.log('Patchrome: Worklet module loaded successfully');
             
             // Create the AudioWorkletNode
             spectralGateNode = new AudioWorkletNode(audioContext, 'spectral-gate-processor');
-            console.log('Patchrome: SpectralGateNode created:', spectralGateNode);
             
             // Set cutoff parameter (already in dB)
             const cutoffValue = node.params.cutoff !== undefined ? node.params.cutoff : -20;
             const cutoffParam = spectralGateNode.parameters.get('cutoff');
-            console.log('Patchrome: Cutoff parameter:', cutoffParam, 'setting to:', cutoffValue);
             
             if (cutoffParam) {
               cutoffParam.value = cutoffValue;
             } else {
-              console.error('Patchrome: No cutoff parameter found on worklet!');
             }
             
             // Connect routing
             inputGain.connect(spectralGateNode);
             spectralGateNode.connect(merger);
-            console.log('Patchrome: Spectral gate connected in audio graph');
           } catch (e) {
-            console.error('Patchrome: Failed to create spectral gate worklet:', e);
-            console.error('Patchrome: Error stack:', e.stack);
             // Fallback: connect directly
             inputGain.connect(merger);
           }
         } else {
-          console.warn('Patchrome: AudioWorklet not supported, spectral gate bypassed');
           inputGain.connect(merger);
         }
         
@@ -658,7 +643,6 @@
             sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'tonegenerator') {
             // Tone generator has no input, skip connection
-            console.log('Patchrome: Warning - Cannot connect to tone generator input');
           } else if (targetNode.type === 'equalizer') {
             // Connect to equalizer input
             sourceNode.audioNode.connect(targetNode.inputGain);
@@ -670,7 +654,6 @@
             sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'spectralgate') {
             // Connect to spectral gate input
-            console.log(`Patchrome: Connecting input to spectral gate ${edge.target}`);
             sourceNode.audioNode.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
             sourceNode.audioNode.connect(targetNode.audioNode);
@@ -955,7 +938,6 @@
             sourceNode.output.connect(targetNode.audioNode);
           }
         } else if (sourceNode.type === 'spectralgate') {
-          console.log(`Patchrome: Connecting spectral gate ${edge.source} to ${targetNode.type} ${edge.target}`);
           if (targetNode.type === 'reverb') {
             // Connect spectral gate output to reverb input
             sourceNode.output.connect(targetNode.inputGain);
@@ -984,7 +966,6 @@
             // Connect spectral gate output to next spectral gate input
             sourceNode.output.connect(targetNode.inputGain);
           } else if (targetNode.type === 'output') {
-            console.log('Patchrome: Connecting spectral gate to output');
             sourceNode.output.connect(targetNode.audioNode);
           }
         }
@@ -1058,7 +1039,6 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated reverb ${nodeId} - wet: ${wetAmount}, dry: ${dryAmount}, size: ${currentSize}, decay: ${currentDecay}`);
       } else if (node.type === 'delay' && node.wetGain && node.dryGain) {
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
@@ -1078,7 +1058,6 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated delay ${nodeId} - wet: ${wetAmount}, dry: ${dryAmount}, delay: ${delayTime}s, feedback: ${feedbackAmount}`);
       } else if (node.type === 'utility' && node.gainNode && node.pannerNode) {
         // Update volume (convert dB to linear)
         const volumeDb = graphNode.params.volume !== undefined ? graphNode.params.volume : 0;
@@ -1124,14 +1103,12 @@
               node.gainNode.connect(node.pannerNode);
             }
           } catch (e) {
-            console.error('Patchrome: Error updating gain phase reversal:', e);
           }
         }
         
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated utility ${nodeId} - volume: ${volumeDb}dB (${gainValue}), pan: ${panValue}, reverse: ${newPhaseReverse}`);
       } else if (node.type === 'limiter' && node.compressor) {
         // Update threshold
         const thresholdDb = graphNode.params.threshold !== undefined ? graphNode.params.threshold : -6;
@@ -1140,7 +1117,6 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated limiter ${nodeId} - threshold: ${thresholdDb}dB`);
       } else if (node.type === 'distortion' && node.wetGain && node.dryGain) {
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
@@ -1169,7 +1145,6 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated distortion ${nodeId} - drive: ${drive}%, wet: ${wetAmount}, dry: ${dryAmount}`);
       } else if (node.type === 'tonegenerator' && node.oscillator && node.gainNode) {
         // Update waveform
         const newWaveform = graphNode.params.waveform || 'sine';
@@ -1190,7 +1165,6 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated tonegenerator ${nodeId} - waveform: ${newWaveform}, freq: ${frequency}Hz, volume: ${volumeDb}dB`);
       } else if (node.type === 'equalizer' && node.filter) {
         // Update filter type
         const newFilterType = graphNode.params.filterType || 'lowpass';
@@ -1210,7 +1184,6 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated equalizer ${nodeId} - type: ${newFilterType}, freq: ${frequency}Hz, Q: ${q}`);
       } else if (node.type === 'phaser' && node.wetGain && node.dryGain) {
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
@@ -1235,7 +1208,6 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated phaser ${nodeId} - mix: ${wetAmount}, rate: ${rate}, depth: ${depth}, feedback: ${feedbackAmount}`);
       } else if (node.type === 'flanger' && node.wetGain && node.dryGain) {
         const wetAmount = (graphNode.params.mix || 0) / 100;
         const dryAmount = 1 - wetAmount;
@@ -1264,9 +1236,7 @@
         // Always update the stored parameters
         node.params = { ...graphNode.params };
         
-        console.log(`Patchrome: Updated flanger ${nodeId} - mix: ${wetAmount}, rate: ${rate}, delay: ${baseDelay}, depth: ${depth}, feedback: ${feedbackAmount}`);
       } else if (node.type === 'spectralgate') {
-        console.log(`Patchrome: Updating spectral gate ${nodeId}, node:`, node);
         
         if (node.spectralGateNode) {
           // Update cutoff parameter
@@ -1278,12 +1248,9 @@
           
           if (cutoffParam) {
             cutoffParam.setValueAtTime(cutoffValue, currentTime);
-            console.log(`Patchrome: Updated spectralgate ${nodeId} - cutoff: ${cutoffValue}dB`);
           } else {
-            console.error('Patchrome: No cutoff parameter on spectral gate node!');
           }
         } else {
-          console.warn(`Patchrome: No spectralGateNode found for ${nodeId}, likely using fallback`);
         }
         
         // Always update the stored parameters
@@ -1434,7 +1401,6 @@
       audioGraphs.set(element, audioNodes);
       
     } catch (e) {
-      console.error('Patchrome: Failed to setup audio processing', e);
     }
   }
   
@@ -1527,11 +1493,9 @@
   // Listen for settings from content script
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'PATCHROME_SETTINGS') {
-      console.log('[Inject] Received PATCHROME_SETTINGS:', event.data.settings);
       
       // Save the worklet URLs if provided
       if (event.data.workletUrl) {
-        console.log('[Inject] Received spectral gate worklet URL:', event.data.workletUrl);
         spectralGateWorkletUrl = event.data.workletUrl;
       }
       
@@ -1546,7 +1510,6 @@
         
         if (oldEnabled !== newEnabled) {
           needsRebuild = true;
-          console.log('Patchrome: Enabled state changed, triggering rebuild');
         }
         
         if (newSettings.audioGraph) {
@@ -1558,7 +1521,6 @@
           
           if (oldEdges !== newEdges || oldNodes !== newNodes) {
             needsRebuild = true;
-            console.log('Patchrome: Audio graph rebuild triggered');
           }
           
           // Always update the settings
@@ -1567,15 +1529,12 @@
         settings.enabled = newEnabled;
       }
       
-      console.log(`[Inject] needsRebuild: ${needsRebuild}, settings.audioGraph:`, settings.audioGraph);
       
       if (needsRebuild) {
         // Force rebuild all audio graphs
-        console.log('[Inject] Rebuilding audio graphs');
         const elements = document.querySelectorAll('audio, video');
         elements.forEach(element => setupAudioProcessing(element, true));
       } else {
-        console.log('[Inject] Updating audio parameters only');
         updateAllMedia();
       }
     }

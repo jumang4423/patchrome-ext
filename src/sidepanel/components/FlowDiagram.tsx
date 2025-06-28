@@ -153,13 +153,11 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     localStorage.setItem('patchrome-flow-positions', JSON.stringify(positions));
     
     // Also update parent component
-    console.log(`[FlowDiagram] Saving to localStorage and updating parent - Graph:`, newGraph);
     onGraphChange(newGraph);
   }, [onGraphChange]);
 
   // Handler for node value changes
   const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number | string | boolean) => {
-    console.log(`[FlowDiagram] handleNodeValueChange - NodeId: ${nodeId}, Key: ${key}, Value: ${value}`);
     
     setNodes((currentNodes) => {
       const updatedNodes = currentNodes.map(node => 
@@ -434,7 +432,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           // Update the parent component's audioGraph
           onGraphChange(parsedGraph);
         } catch (error) {
-          console.error('Failed to load saved graph:', error);
         }
       } else {
         // No saved graph, initialize with default nodes
@@ -840,7 +837,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'spectralgate') {
-      console.log('Patchrome Sidepanel: Adding spectral gate node');
       const viewport = getViewport();
       
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
@@ -855,18 +851,15 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           cutoff: -20,
           deletable: true,
           onChange: (key: string, value: number) => {
-            console.log(`Patchrome Sidepanel: Spectral gate ${newNodeId} param changed - ${key}: ${value}`);
             handleNodeValueChange(newNodeId, key, value);
           },
           onRemove: () => handleRemoveNode(newNodeId)
         },
         position: { x: centerX - 110, y: centerY - 75 },
       };
-      console.log('Patchrome Sidepanel: Created spectral gate node:', newNode);
       // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
         const updated = [...nds, newNode];
-        console.log('Patchrome Sidepanel: Updated nodes with spectral gate:', updated);
         saveToLocalStorage(updated, edges);
         return updated;
       });
