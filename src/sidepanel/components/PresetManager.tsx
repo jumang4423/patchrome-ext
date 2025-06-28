@@ -344,6 +344,178 @@ const PresetManager: React.FC<PresetManagerProps> = ({
       ],
       createdAt: 1751099521583,
       updatedAt: 1751099521583
+    },
+    {
+      id: "1751106792985",
+      name: "bass boost (factory)",
+      nodes: [
+        {
+          id: "1",
+          type: "unifiedAudio",
+          position: {
+            x: -390.1875762722563,
+            y: 187.63007634001585
+          },
+          data: {
+            type: "input",
+            speed: 1,
+            deletable: false
+          },
+          deletable: false
+        },
+        {
+          id: "2",
+          type: "unifiedAudio",
+          position: {
+            x: 774.13276675499,
+            y: 482.71047825611464
+          },
+          data: {
+            type: "output",
+            deletable: false
+          },
+          deletable: false
+        },
+        {
+          id: "3",
+          type: "unifiedAudio",
+          position: {
+            x: -69.42094822113035,
+            y: 343.6724408206707
+          },
+          data: {
+            type: "equalizer",
+            filterType: "lowpass",
+            frequency: 128,
+            q: 2.3,
+            deletable: true
+          },
+          deletable: true
+        },
+        {
+          id: "4",
+          type: "unifiedAudio",
+          position: {
+            x: 221.68748091058808,
+            y: 522.8070282253947
+          },
+          data: {
+            type: "distortion",
+            drive: 5,
+            mix: 100,
+            deletable: true
+          },
+          deletable: true
+        },
+        {
+          id: "6",
+          type: "unifiedAudio",
+          position: {
+            x: 17.04745700593827,
+            y: -196.83516651782097
+          },
+          data: {
+            type: "equalizer",
+            filterType: "highpass",
+            frequency: 113,
+            q: 3.2,
+            deletable: true
+          },
+          deletable: true
+        },
+        {
+          id: "7",
+          type: "unifiedAudio",
+          position: {
+            x: 274.8202998269678,
+            y: 130.59444961049667
+          },
+          data: {
+            type: "spectralgate",
+            cutoff: 15.4,
+            deletable: true
+          },
+          deletable: true
+        },
+        {
+          id: "8",
+          type: "unifiedAudio",
+          position: {
+            x: 484.4060626194775,
+            y: -67.66395559355175
+          },
+          data: {
+            type: "utility",
+            volume: -18.2,
+            pan: 0,
+            reverse: true,
+            deletable: true
+          },
+          deletable: true
+        },
+        {
+          id: "10",
+          type: "unifiedAudio",
+          position: {
+            x: 765.3427384969009,
+            y: 136.02926010168113
+          },
+          data: {
+            type: "spectralcompressor",
+            threshold: -46,
+            ratio: 0.99,
+            attack: 10,
+            release: 46,
+            inputGain: 10,
+            deletable: true
+          },
+          deletable: true
+        }
+      ],
+      edges: [
+        {
+          id: "reactflow__edge-1-3",
+          source: "1",
+          target: "3"
+        },
+        {
+          id: "reactflow__edge-3-4",
+          source: "3",
+          target: "4"
+        },
+        {
+          id: "reactflow__edge-1-6",
+          source: "1",
+          target: "6"
+        },
+        {
+          id: "reactflow__edge-6-7",
+          source: "6",
+          target: "7"
+        },
+        {
+          id: "reactflow__edge-7-8",
+          source: "7",
+          target: "8"
+        },
+        {
+          id: "reactflow__edge-8-10",
+          source: "8",
+          target: "10"
+        },
+        {
+          id: "reactflow__edge-4-10",
+          source: "4",
+          target: "10"
+        },
+        {
+          id: "reactflow__edge-10-2",
+          source: "10",
+          target: "2"
+        }
+      ],
+      createdAt: 1751106792985,
+      updatedAt: 1751106792985
     }
   ];
 

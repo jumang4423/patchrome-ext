@@ -23,15 +23,6 @@ Patchrome is a Chrome extension that intercepts and processes audio from web pag
 - **Per-site Compatibility**: Works on most websites with HTML5 audio/video
 - **Persistent Settings**: Your effect chains are saved per session
 
-## Installation
-
-1. Clone this repository
-2. Run `npm install` to install dependencies
-3. Run `npm run build` to build the extension
-4. Open Chrome and navigate to `chrome://extensions`
-5. Enable "Developer mode"
-6. Click "Load unpacked" and select the `dist` folder
-
 ## Usage Tips
 
 ### Quick Actions
@@ -40,11 +31,6 @@ Patchrome is a Chrome extension that intercepts and processes audio from web pag
 - **Double-click on any slider** → Enter precise values manually
 - **Drag nodes** → Rearrange your effect chain visually
 - **Click the power button** → Enable/disable all effects globally
-
-### Keyboard Shortcuts
-
-- **Delete/Backspace** → Remove selected node (except Input/Output nodes)
-- **Escape** → Close dialogs
 
 ### Effect Parameters
 

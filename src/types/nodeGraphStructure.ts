@@ -47,8 +47,8 @@ export const InputParamDOM: ParamConfig[] = [
   {
      label: 'Speed', 
      key: 'speed',
-     min: 0.5,
-     max: 1.5,
+     min: 0.25,
+     max: 4,
      step: 0.01,
      valueType: 'speed'
   },
