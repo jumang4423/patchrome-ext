@@ -977,59 +977,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     }
   }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode, handleNodeValueChange, edges, saveToLocalStorage]);
 
-  const handleMenuAction = useCallback((action: 'import' | 'export') => {
-    switch (action) {
-      case 'import':
-        // Import patch from file
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = (e) => {
-          const file = (e.target as HTMLInputElement).files?.[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                const importedGraph = JSON.parse(event.target?.result as string) as AudioGraphData;
-                const flowNodes = convertGraphToNodes(importedGraph);
-                const flowEdges = importedGraph.edges.map(edge => ({
-                  ...edge,
-                  type: 'maxStyle'
-                }));
-                
-                setNodes(flowNodes);
-                setEdges(flowEdges);
-                saveToLocalStorage(flowNodes, flowEdges);
-                
-                // Update node counter
-                const maxId = Math.max(...importedGraph.nodes.map(n => parseInt(n.id)));
-                setNodeIdCounter(maxId + 1);
-              } catch (error) {
-                alert('Failed to import patch: Invalid file format');
-              }
-            };
-            reader.readAsText(file);
-          }
-        };
-        input.click();
-        break;
-      case 'export':
-        // Export current patch to file
-        const savedGraph = localStorage.getItem('patchrome-flow-graph');
-        if (savedGraph) {
-          const blob = new Blob([savedGraph], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'patchrome-patch.json';
-          a.click();
-          URL.revokeObjectURL(url);
-        } else {
-          alert('No patch to export');
-        }
-        break;
-    }
-  }, [nodes, convertGraphToNodes, setNodes, setEdges, saveToLocalStorage, setNodeIdCounter]);
 
   // Update onRemove handlers when handleRemoveNode changes
   React.useEffect(() => {
@@ -1082,7 +1029,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       </ReactFlow>
       <LogoButton onClick={() => onEnabledChange(!isEnabled)} isActive={isEnabled} />
       <AddEffectButton onClick={() => setIsEffectDialogOpen(true)} />
-      <MenuButton onAction={handleMenuAction} onInfoClick={() => setIsInfoModalOpen(true)} />
+      <MenuButton onInfoClick={() => setIsInfoModalOpen(true)} />
       <AddEffectDialog 
         open={isEffectDialogOpen} 
         onOpenChange={setIsEffectDialogOpen}
