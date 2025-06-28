@@ -6,8 +6,6 @@
   
   let settings = {
     enabled: true,
-    speed: 1.0,
-    reverb: 0,
     audioGraph: {
       nodes: [
         { id: '1', type: 'input', params: { speed: 1.0 } },
@@ -1297,7 +1295,7 @@
   // Get current speed from settings
   function getCurrentSpeed() {
     const inputNode = settings.audioGraph.nodes.find(n => n.type === 'input');
-    return inputNode?.params.speed || settings.speed;
+    return inputNode?.params.speed || 1.0;
   }
   
   // Disconnect all nodes in the graph
@@ -1551,12 +1549,6 @@
           console.log('Patchrome: Enabled state changed, triggering rebuild');
         }
         
-        if (typeof newSettings.speed === 'number' && isFinite(newSettings.speed) && newSettings.speed > 0) {
-          settings.speed = newSettings.speed;
-        }
-        if (typeof newSettings.reverb === 'number' && isFinite(newSettings.reverb) && newSettings.reverb >= 0 && newSettings.reverb <= 100) {
-          settings.reverb = newSettings.reverb;
-        }
         if (newSettings.audioGraph) {
           // Check if edges or nodes have changed
           const oldEdges = JSON.stringify(settings.audioGraph.edges);
