@@ -192,6 +192,7 @@
         const pannerNode = audioContext.createStereoPanner();
         const splitter = audioContext.createChannelSplitter(2);
         const merger = audioContext.createChannelMerger(2);
+        const leftPhaseGain = audioContext.createGain();
         const rightPhaseGain = audioContext.createGain();
         
         // Convert dB to linear gain (-inf dB = 0, 0 dB = 1, +12 dB = ~4)
@@ -208,20 +209,23 @@
         const panValue = node.params.pan !== undefined ? node.params.pan / 100 : 0;
         pannerNode.pan.value = panValue;
         
-        // Set phase reversal for right channel
-        const phaseReverse = node.params.reverse !== undefined ? node.params.reverse : false;
-        rightPhaseGain.gain.value = phaseReverse ? -1 : 1;
+        // Set phase reversal for left and right channels separately
+        const phaseReverseL = node.params.reverseL !== undefined ? node.params.reverseL : false;
+        const phaseReverseR = node.params.reverseR !== undefined ? node.params.reverseR : false;
+        leftPhaseGain.gain.value = phaseReverseL ? -1 : 1;
+        rightPhaseGain.gain.value = phaseReverseR ? -1 : 1;
         
         // Connect routing based on phase reversal
-        if (phaseReverse) {
-          // With phase reversal: input -> gain -> splitter -> merger (with right channel inverted) -> panner
+        if (phaseReverseL || phaseReverseR) {
+          // With phase reversal: input -> gain -> splitter -> merger (with channels inverted as needed) -> panner
           inputGain.connect(gainNode);
           gainNode.connect(splitter);
           
-          // Left channel: direct connection
-          splitter.connect(merger, 0, 0);
+          // Left channel: phase inverted if needed
+          splitter.connect(leftPhaseGain, 0);
+          leftPhaseGain.connect(merger, 0, 0);
           
-          // Right channel: phase inverted
+          // Right channel: phase inverted if needed
           splitter.connect(rightPhaseGain, 1);
           rightPhaseGain.connect(merger, 0, 1);
           
@@ -241,14 +245,16 @@
           pannerNode,
           splitter,
           merger,
+          leftPhaseGain,
           rightPhaseGain,
           params: node.params,
           audioContext
         });
         
         // Store internal connections
-        if (phaseReverse) {
+        if (phaseReverseL || phaseReverseR) {
           connections.push({ from: gainNode, to: splitter });
+          connections.push({ from: leftPhaseGain, to: merger });
           connections.push({ from: rightPhaseGain, to: merger });
           connections.push({ from: merger, to: pannerNode });
         } else {
@@ -1501,13 +1507,17 @@
         node.gainNode.gain.value = gainValue;
         node.pannerNode.pan.value = panValue;
         
-        // Handle phase reversal update
-        const newPhaseReverse = graphNode.params.reverse !== undefined ? graphNode.params.reverse : false;
-        const oldPhaseReverse = node.params.reverse !== undefined ? node.params.reverse : false;
+        // Handle phase reversal update for L and R channels
+        const newPhaseReverseL = graphNode.params.reverseL !== undefined ? graphNode.params.reverseL : false;
+        const newPhaseReverseR = graphNode.params.reverseR !== undefined ? graphNode.params.reverseR : false;
+        const oldPhaseReverseL = node.params.reverseL !== undefined ? node.params.reverseL : false;
+        const oldPhaseReverseR = node.params.reverseR !== undefined ? node.params.reverseR : false;
         
-        if (newPhaseReverse !== oldPhaseReverse && node.rightPhaseGain) {
-          // Update phase inversion
-          node.rightPhaseGain.gain.value = newPhaseReverse ? -1 : 1;
+        if ((newPhaseReverseL !== oldPhaseReverseL || newPhaseReverseR !== oldPhaseReverseR) && 
+            node.leftPhaseGain && node.rightPhaseGain) {
+          // Update phase inversions
+          node.leftPhaseGain.gain.value = newPhaseReverseL ? -1 : 1;
+          node.rightPhaseGain.gain.value = newPhaseReverseR ? -1 : 1;
           
           // Reconnect nodes based on new phase reversal state
           try {
@@ -1515,12 +1525,14 @@
             node.gainNode.disconnect();
             if (node.splitter) node.splitter.disconnect();
             if (node.merger) node.merger.disconnect();
+            if (node.leftPhaseGain) node.leftPhaseGain.disconnect();
             if (node.rightPhaseGain) node.rightPhaseGain.disconnect();
             
-            if (newPhaseReverse) {
+            if (newPhaseReverseL || newPhaseReverseR) {
               // With phase reversal
               node.gainNode.connect(node.splitter);
-              node.splitter.connect(node.merger, 0, 0);
+              node.splitter.connect(node.leftPhaseGain, 0);
+              node.leftPhaseGain.connect(node.merger, 0, 0);
               node.splitter.connect(node.rightPhaseGain, 1);
               node.rightPhaseGain.connect(node.merger, 0, 1);
               node.merger.connect(node.pannerNode);
@@ -1850,6 +1862,9 @@
       }
       if (node.splitter) {
         try { node.splitter.disconnect(); } catch(e) {}
+      }
+      if (node.leftPhaseGain) {
+        try { node.leftPhaseGain.disconnect(); } catch(e) {}
       }
       if (node.rightPhaseGain) {
         try { node.rightPhaseGain.disconnect(); } catch(e) {}

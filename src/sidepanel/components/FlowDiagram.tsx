@@ -88,7 +88,8 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         baseNode.params = { 
           volume: node.data.volume ?? AUDIO_PARAM_DEFAULTS.utility.volume,
           pan: node.data.pan ?? AUDIO_PARAM_DEFAULTS.utility.pan,
-          reverse: node.data.reverse ?? AUDIO_PARAM_DEFAULTS.utility.reverse
+          reverseL: node.data.reverseL ?? AUDIO_PARAM_DEFAULTS.utility.reverseL,
+          reverseR: node.data.reverseR ?? AUDIO_PARAM_DEFAULTS.utility.reverseR
         };
       } else if (node.data.type === 'limiter') {
         baseNode.params = { 
@@ -300,9 +301,10 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             type: 'utility' as const,
             volume: node.params.volume ?? AUDIO_PARAM_DEFAULTS.utility.volume,
             pan: node.params.pan ?? AUDIO_PARAM_DEFAULTS.utility.pan,
-            reverse: node.params.reverse ?? AUDIO_PARAM_DEFAULTS.utility.reverse,
+            reverseL: node.params.reverseL ?? AUDIO_PARAM_DEFAULTS.utility.reverseL,
+            reverseR: node.params.reverseR ?? AUDIO_PARAM_DEFAULTS.utility.reverseR,
             deletable: true,
-            onChange: (key: string, value: number) => {
+            onChange: (key: string, value: number | boolean) => {
               handleNodeValueChange(node.id, key, value);
             },
             onRemove: () => handleRemoveNode(node.id),

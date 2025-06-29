@@ -15,7 +15,8 @@ export const AUDIO_PARAM_DEFAULTS = {
   utility: {
     volume: 0,
     pan: 0,
-    reverse: false
+    reverseL: false,
+    reverseR: false
   },
   limiter: {
     threshold: -6

@@ -136,7 +136,8 @@ export interface UtilityNode extends BaseNode {
   data: {
     volume: number;
     pan: number;
-    reverse: boolean;
+    reverseL: boolean;
+    reverseR: boolean;
   };
   deletable: true;
 }
@@ -159,8 +160,13 @@ export const UtilityParamDOM: ParamConfig[] = [
      valueType: 'pan' as ValueType
   },
   {
-     label: 'Invert Phase',
-     key: 'reverse',
+     label: 'Invert L Phase',
+     key: 'reverseL',
+     valueType: 'boolean' as ValueType
+  },
+  {
+     label: 'Invert R Phase',
+     key: 'reverseR',
      valueType: 'boolean' as ValueType
   }
 ];
