@@ -1,13 +1,10 @@
 import * as React from "react"
 import { cn } from "../../lib/utils"
-
 interface DropdownMenuContextValue {
   open: boolean
   setOpen: (open: boolean) => void
 }
-
 const DropdownMenuContext = React.createContext<DropdownMenuContextValue | undefined>(undefined)
-
 const useDropdownMenu = () => {
   const context = React.useContext(DropdownMenuContext)
   if (!context) {
@@ -15,7 +12,6 @@ const useDropdownMenu = () => {
   }
   return context
 }
-
 const DropdownMenu = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
@@ -26,7 +22,6 @@ const DropdownMenu = React.forwardRef<
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false)
   const open = controlledOpen ?? uncontrolledOpen
   const setOpen = onOpenChange ?? setUncontrolledOpen
-
   return (
     <DropdownMenuContext.Provider value={{ open, setOpen }}>
       <div ref={ref} className={cn("relative inline-block text-left", className)} {...props}>
@@ -36,13 +31,11 @@ const DropdownMenu = React.forwardRef<
   )
 })
 DropdownMenu.displayName = "DropdownMenu"
-
 const DropdownMenuTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, onClick, ...props }, ref) => {
   const { setOpen } = useDropdownMenu()
-  
   return (
     <button
       ref={ref}
@@ -59,7 +52,6 @@ const DropdownMenuTrigger = React.forwardRef<
   )
 })
 DropdownMenuTrigger.displayName = "DropdownMenuTrigger"
-
 const DropdownMenuContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
@@ -69,26 +61,21 @@ const DropdownMenuContent = React.forwardRef<
 >(({ className, align = "center", sideOffset = 4, ...props }, ref) => {
   const { open, setOpen } = useDropdownMenu()
   const contentRef = React.useRef<HTMLDivElement>(null)
-
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
-        // Check if the click is on the trigger button
         const triggerElement = contentRef.current.parentElement?.querySelector('button')
         if (triggerElement && !triggerElement.contains(event.target as Node)) {
           setOpen(false)
         }
       }
     }
-
     if (open) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [open, setOpen])
-
   if (!open) return null
-
   return (
     <div
       ref={(node) => {
@@ -109,7 +96,6 @@ const DropdownMenuContent = React.forwardRef<
   )
 })
 DropdownMenuContent.displayName = "DropdownMenuContent"
-
 const DropdownMenuItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
@@ -117,7 +103,6 @@ const DropdownMenuItem = React.forwardRef<
   }
 >(({ className, inset, onClick, ...props }, ref) => {
   const { setOpen } = useDropdownMenu()
-  
   return (
     <div
       ref={ref}
@@ -135,7 +120,6 @@ const DropdownMenuItem = React.forwardRef<
   )
 })
 DropdownMenuItem.displayName = "DropdownMenuItem"
-
 const DropdownMenuSeparator = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -147,7 +131,6 @@ const DropdownMenuSeparator = React.forwardRef<
   />
 ))
 DropdownMenuSeparator.displayName = "DropdownMenuSeparator"
-
 const DropdownMenuLabel = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
@@ -165,7 +148,6 @@ const DropdownMenuLabel = React.forwardRef<
   />
 ))
 DropdownMenuLabel.displayName = "DropdownMenuLabel"
-
 export {
   DropdownMenu,
   DropdownMenuTrigger,

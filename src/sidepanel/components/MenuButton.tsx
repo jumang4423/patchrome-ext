@@ -1,43 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Menu, Info, ExternalLink, Package } from 'lucide-react';
-
 interface MenuButtonProps {
   onInfoClick: () => void;
   onPresetsClick: () => void;
 }
-
 const MenuButton: React.FC<MenuButtonProps> = ({ onInfoClick, onPresetsClick }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Close menu if clicking anywhere outside both menu and button
       if (isOpen && menuRef.current && buttonRef.current) {
         const target = event.target as Node;
         const isClickInsideMenu = menuRef.current.contains(target);
         const isClickInsideButton = buttonRef.current.contains(target);
-        
         if (!isClickInsideMenu && !isClickInsideButton) {
           setIsOpen(false);
         }
       }
     };
-
     if (isOpen) {
-      // Use capture phase to catch events before ReactFlow handles them
       document.addEventListener('mousedown', handleClickOutside, true);
       document.addEventListener('click', handleClickOutside, true);
-      
       return () => {
         document.removeEventListener('mousedown', handleClickOutside, true);
         document.removeEventListener('click', handleClickOutside, true);
       };
     }
   }, [isOpen]);
-
-
   return (
     <div className="menu-container">
       <button
@@ -48,7 +38,6 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onInfoClick, onPresetsClick }) 
       >
         <Menu className="menu-icon" />
       </button>
-      
       {isOpen && (
         <div ref={menuRef} className="menu-dropdown">
           <div className="menu-dropdown-items">
@@ -83,7 +72,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onInfoClick, onPresetsClick }) 
             <button
               className="menu-dropdown-item"
               onClick={() => {
-                window.open('https://github.com/jumang4423/patchrome-ext/blob/main/README.md', '_blank');
+                window.open('https://github.com/jumang4423/patchrome-ext');
                 setIsOpen(false);
               }}
             >
@@ -100,5 +89,4 @@ const MenuButton: React.FC<MenuButtonProps> = ({ onInfoClick, onPresetsClick }) 
     </div>
   );
 };
-
 export default MenuButton;

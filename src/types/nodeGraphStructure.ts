@@ -1,7 +1,6 @@
 export type NodeType = 'input' | 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'spectralpitch' | 'bitcrusher' | 'output';
 export type EffectNodeType = 'reverb' | 'delay' | 'utility' | 'limiter' | 'distortion' | 'tonegenerator' | 'equalizer' | 'phaser' | 'flanger' | 'spectralgate' | 'spectralcompressor' | 'spectralpitch' | 'bitcrusher';
 export type ValueType = 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'boolean' | 'speed' | 'waveform' | 'filtertype';
-
 export interface BaseNode {
   id: string;
   type: NodeType;
@@ -9,32 +8,25 @@ export interface BaseNode {
   data: Record<string, any>;
   deletable: boolean;
 }
-
 export interface BaseParamConfig {
   label: string;
   key: string;
   valueType: ValueType;
 }
-
 export interface SliderParamConfig extends BaseParamConfig {
   valueType: 'percentage' | 'number' | 'milliseconds' | 'decibels' | 'pan' | 'speed';
   min: number;
   max: number;
   step: number;
 }
-
 export interface BooleanParamConfig extends BaseParamConfig {
   valueType: 'boolean';
 }
-
 export interface SelectParamConfig extends BaseParamConfig {
   valueType: 'waveform' | 'filtertype';
   options: string[];
 }
-
 export type ParamConfig = SliderParamConfig | BooleanParamConfig | SelectParamConfig;
-
-// input
 export interface InputNode extends BaseNode {
   type: 'input';
   data: {
@@ -42,7 +34,6 @@ export interface InputNode extends BaseNode {
   };
   deletable: false;
 }
-
 export const InputParamDOM: ParamConfig[] = [
   {
      label: 'Speed', 
@@ -53,8 +44,6 @@ export const InputParamDOM: ParamConfig[] = [
      valueType: 'speed'
   },
 ];
-
-// reverb
 export interface ReverbNode extends BaseNode {
   type: 'reverb';
   data: {
@@ -64,7 +53,6 @@ export interface ReverbNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const ReverbParamDOM: ParamConfig[] = [
   {
      label: 'Mix',
@@ -91,8 +79,6 @@ export const ReverbParamDOM: ParamConfig[] = [
      valueType: 'percentage'
   },
 ];
-
-// delay
 export interface DelayNode extends BaseNode {
   type: 'delay';
   data: {
@@ -102,7 +88,6 @@ export interface DelayNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const DelayParamDOM: ParamConfig[] = [
   {
      label: 'Mix',
@@ -129,8 +114,6 @@ export const DelayParamDOM: ParamConfig[] = [
      valueType: 'percentage'
   },
 ];
-
-// utility
 export interface UtilityNode extends BaseNode {
   type: 'utility';
   data: {
@@ -141,7 +124,6 @@ export interface UtilityNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const UtilityParamDOM: ParamConfig[] = [
   {
      label: 'Volume',
@@ -170,8 +152,6 @@ export const UtilityParamDOM: ParamConfig[] = [
      valueType: 'boolean' as ValueType
   }
 ];
-
-// limiter
 export interface LimiterNode extends BaseNode {
   type: 'limiter';
   data: {
@@ -179,7 +159,6 @@ export interface LimiterNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const LimiterParamDOM: ParamConfig[] = [
   {
      label: 'Threshold',
@@ -190,8 +169,6 @@ export const LimiterParamDOM: ParamConfig[] = [
      valueType: 'decibels'
   }
 ];
-
-// distortion
 export interface DistortionNode extends BaseNode {
   type: 'distortion';
   data: {
@@ -200,7 +177,6 @@ export interface DistortionNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const DistortionParamDOM: ParamConfig[] = [
   {
      label: 'Drive',
@@ -219,8 +195,6 @@ export const DistortionParamDOM: ParamConfig[] = [
      valueType: 'percentage'
   }
 ];
-
-// tonegenerator
 export interface ToneGeneratorNode extends BaseNode {
   type: 'tonegenerator';
   data: {
@@ -230,7 +204,6 @@ export interface ToneGeneratorNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const ToneGeneratorParamDOM: ParamConfig[] = [
   {
     label: 'Waveform',
@@ -255,8 +228,6 @@ export const ToneGeneratorParamDOM: ParamConfig[] = [
     valueType: 'decibels'
   }
 ];
-
-// equalizer
 export interface EqualizerNode extends BaseNode {
   type: 'equalizer';
   data: {
@@ -266,7 +237,6 @@ export interface EqualizerNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const EqualizerParamDOM: ParamConfig[] = [
   {
     label: 'Filter Type',
@@ -291,8 +261,6 @@ export const EqualizerParamDOM: ParamConfig[] = [
     valueType: 'number'
   }
 ];
-
-// phaser
 export interface PhaserNode extends BaseNode {
   type: 'phaser';
   data: {
@@ -303,7 +271,6 @@ export interface PhaserNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const PhaserParamDOM: ParamConfig[] = [
   {
     label: 'Rate',
@@ -338,8 +305,6 @@ export const PhaserParamDOM: ParamConfig[] = [
     valueType: 'percentage'
   }
 ];
-
-// flanger
 export interface FlangerNode extends BaseNode {
   type: 'flanger';
   data: {
@@ -351,7 +316,6 @@ export interface FlangerNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const FlangerParamDOM: ParamConfig[] = [
   {
     label: 'Rate',
@@ -394,8 +358,6 @@ export const FlangerParamDOM: ParamConfig[] = [
     valueType: 'percentage'
   }
 ];
-
-// spectralgate
 export interface SpectralGateNode extends BaseNode {
   type: 'spectralgate';
   data: {
@@ -404,7 +366,6 @@ export interface SpectralGateNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const SpectralGateParamDOM: ParamConfig[] = [
   {
     label: 'Cutoff',
@@ -421,8 +382,6 @@ export const SpectralGateParamDOM: ParamConfig[] = [
     options: [512, 1024, 2048, 4096, 8192, 16384, 32768]
   }
 ];
-
-// spectralcompressor
 export interface SpectralCompressorNode extends BaseNode {
   type: 'spectralcompressor';
   data: {
@@ -434,7 +393,6 @@ export interface SpectralCompressorNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const SpectralCompressorParamDOM: ParamConfig[] = [
   {
     label: 'Threshold',
@@ -477,8 +435,6 @@ export const SpectralCompressorParamDOM: ParamConfig[] = [
     valueType: 'decibels'
   }
 ];
-
-// spectralpitch
 export interface SpectralPitchNode extends BaseNode {
   type: 'spectralpitch';
   data: {
@@ -488,7 +444,6 @@ export interface SpectralPitchNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const SpectralPitchParamDOM: ParamConfig[] = [
   {
     label: 'Pitch',
@@ -513,8 +468,6 @@ export const SpectralPitchParamDOM: ParamConfig[] = [
     options: [512, 1024, 2048, 4096, 8192, 16384, 32768]
   }
 ];
-
-// bitcrusher
 export interface BitcrusherNode extends BaseNode {
   type: 'bitcrusher';
   data: {
@@ -524,7 +477,6 @@ export interface BitcrusherNode extends BaseNode {
   };
   deletable: true;
 }
-
 export const BitcrusherParamDOM: ParamConfig[] = [
   {
     label: 'Mix',
@@ -551,20 +503,13 @@ export const BitcrusherParamDOM: ParamConfig[] = [
     valueType: 'number'
   }
 ];
-
-
-// output
-
 export interface OutputNode extends BaseNode {
   type: 'output';
   data: {};
   deletable: false;
 }
-
 export const OutputParamDOM: ParamConfig[] = [];
-
 export type AudioNode = InputNode | ReverbNode | DelayNode | UtilityNode | LimiterNode | DistortionNode | ToneGeneratorNode | EqualizerNode | PhaserNode | FlangerNode | SpectralGateNode | SpectralCompressorNode | SpectralPitchNode | BitcrusherNode | OutputNode;
-
 export interface Connection {
   id: string;
   source: string;
@@ -572,12 +517,10 @@ export interface Connection {
   sourceHandle?: string;
   targetHandle?: string;
 }
-
 export interface NodeGraph {
   nodes: AudioNode[];
   connections: Connection[];
 }
-
 export interface NodeGraphSettings {
   nodeGraph: NodeGraph;
 }

@@ -20,9 +20,9 @@ zip -r patchrome-ext.zip dist/ manifest.json icon*.png logo.png
 
 1. Go to your repository on GitHub
 2. Click on "Releases" → "Create a new release"
-3. Choose a tag (e.g., `v1.0.0`)
+3. Choose a tag (e.g., `v0.1.0`)
 4. Fill in release details:
-   - **Release title**: `Patchrome v1.0.0`
+   - **Release title**: `Patchrome v0.1.0`
    - **Description**: Include changelog and features
 5. Upload `patchrome-ext.zip` as a release asset
 6. Publish release
@@ -46,7 +46,7 @@ Update the version badge in README.md to match the new release version.
 ## Version Naming
 
 Follow semantic versioning:
-- `MAJOR.MINOR.PATCH` (e.g., 1.0.0)
+- `MAJOR.MINOR.PATCH` (e.g., 0.1.0)
 - MAJOR: Breaking changes
 - MINOR: New features
 - PATCH: Bug fixes
@@ -54,8 +54,6 @@ Follow semantic versioning:
 ## Example Release Description
 
 ```markdown
-## 🎉 Patchrome v1.0.0
-
 First public release of Patchrome - Real-time audio effects for any website!
 
 ### ✨ Features

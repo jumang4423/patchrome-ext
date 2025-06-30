@@ -2,15 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Slider from './components/Slider';
 import FlowDiagram from './components/FlowDiagram';
 import { Settings, AudioGraphData } from '../shared/types';
-
 const App: React.FC = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (response) => {
       if (chrome.runtime.lastError) {
-        // Only use default settings if there's an error loading
         setSettings({
           enabled: false,
           audioGraph: {
@@ -31,17 +28,12 @@ const App: React.FC = () => {
       setIsLoading(false);
     });
   }, []);
-
   const handleGraphChange = useCallback((audioGraph: AudioGraphData) => {
-    
     setSettings(prevSettings => {
       const newSettings = {
         ...prevSettings,
         audioGraph
       };
-      
-      
-      // Save settings after state update
       chrome.runtime.sendMessage({
         type: 'UPDATE_SETTINGS',
         settings: newSettings
@@ -50,18 +42,15 @@ const App: React.FC = () => {
         } else {
         }
       });
-      
       return newSettings;
     });
   }, []);
-
   const handleEnabledChange = useCallback((enabled: boolean) => {
     setSettings(prevSettings => {
       const newSettings = {
         ...prevSettings,
         enabled
       };
-      
       chrome.runtime.sendMessage({
         type: 'UPDATE_SETTINGS',
         settings: newSettings
@@ -69,15 +58,12 @@ const App: React.FC = () => {
         if (chrome.runtime.lastError) {
         }
       });
-      
       return newSettings;
     });
   }, []);
-
   if (isLoading || !settings) {
     return <div className="container">Loading...</div>;
   }
-
   return (
     <div className="container">
       <FlowDiagram 
@@ -89,5 +75,4 @@ const App: React.FC = () => {
     </div>
   );
 };
-
 export default App;

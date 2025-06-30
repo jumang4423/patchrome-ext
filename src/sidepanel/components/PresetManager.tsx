@@ -6,7 +6,6 @@ import {
 import { Plus, Trash2, ChevronRight, Save, FileDown, Upload, Download } from 'lucide-react';
 import { NodeGraphPreset, PresetsData, PRESETS_STORAGE_KEY, PRESETS_VERSION } from '../../types/presets';
 import { Node, Edge } from 'reactflow';
-
 interface PresetManagerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,7 +13,6 @@ interface PresetManagerProps {
   currentNodes: Node[];
   currentEdges: Edge[];
 }
-
 const PresetManager: React.FC<PresetManagerProps> = ({ 
   isOpen, 
   onClose, 
@@ -27,8 +25,6 @@ const PresetManager: React.FC<PresetManagerProps> = ({
   const [newPresetName, setNewPresetName] = useState('');
   const [newPresetDescription, setNewPresetDescription] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  // Default factory presets
   const defaultPresets: NodeGraphPreset[] = [
     {
       id: "init",
@@ -518,8 +514,6 @@ const PresetManager: React.FC<PresetManagerProps> = ({
       updatedAt: 1751106792985
     }
   ];
-
-  // Load presets from localStorage
   useEffect(() => {
     const loadPresets = () => {
       try {
@@ -530,18 +524,13 @@ const PresetManager: React.FC<PresetManagerProps> = ({
             setPresets(data.presets);
           }
         } else {
-          // No presets in localStorage, initialize with default factory presets
           savePresets(defaultPresets);
         }
       } catch (error) {
-        console.error('Failed to load presets:', error);
       }
     };
-
     loadPresets();
   }, []);
-
-  // Save presets to localStorage
   const savePresets = (newPresets: NodeGraphPreset[]) => {
     const data: PresetsData = {
       version: PRESETS_VERSION,
@@ -551,14 +540,10 @@ const PresetManager: React.FC<PresetManagerProps> = ({
       localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(data));
       setPresets(newPresets);
     } catch (error) {
-      console.error('Failed to save presets:', error);
     }
   };
-
-  // Create new preset from current graph
   const handleSavePreset = () => {
     if (!newPresetName.trim()) return;
-
     const newPreset: NodeGraphPreset = {
       id: Date.now().toString(),
       name: newPresetName.trim(),
@@ -580,22 +565,16 @@ const PresetManager: React.FC<PresetManagerProps> = ({
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
-
     const updatedPresets = [...presets, newPreset].sort((a, b) => b.createdAt - a.createdAt);
     savePresets(updatedPresets);
-    
     setNewPresetName('');
     setNewPresetDescription('');
     setShowSaveDialog(false);
   };
-
-  // Delete preset
   const handleDeletePreset = (presetId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setDeleteConfirmId(presetId);
   };
-
-  // Confirm delete
   const confirmDelete = () => {
     if (deleteConfirmId) {
       const updatedPresets = presets.filter(p => p.id !== deleteConfirmId);
@@ -603,8 +582,6 @@ const PresetManager: React.FC<PresetManagerProps> = ({
       setDeleteConfirmId(null);
     }
   };
-
-  // Export preset
   const handleExportPreset = (preset: NodeGraphPreset, e: React.MouseEvent) => {
     e.stopPropagation();
     const exportData = {
@@ -621,8 +598,6 @@ const PresetManager: React.FC<PresetManagerProps> = ({
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
-  // Import preset
   const handleImportPreset = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -636,7 +611,7 @@ const PresetManager: React.FC<PresetManagerProps> = ({
           if (data.version === PRESETS_VERSION && data.preset) {
             const importedPreset = {
               ...data.preset,
-              id: Date.now().toString(), // Generate new ID
+              id: Date.now().toString(), 
               createdAt: Date.now(),
               updatedAt: Date.now()
             };
@@ -652,24 +627,18 @@ const PresetManager: React.FC<PresetManagerProps> = ({
     };
     input.click();
   };
-
-  // Apply preset
   const handleApplyPreset = (preset: NodeGraphPreset) => {
     onApplyPreset(preset);
     onClose();
   };
-
   const openSaveDialog = () => {
     setShowSaveDialog(true);
   };
-
   const closeSaveDialog = () => {
     setShowSaveDialog(false);
     setNewPresetName('');
     setNewPresetDescription('');
   };
-
-  // Reset all states when dialog closes
   const handleDialogClose = () => {
     setShowSaveDialog(false);
     setDeleteConfirmId(null);
@@ -677,8 +646,6 @@ const PresetManager: React.FC<PresetManagerProps> = ({
     setNewPresetDescription('');
     onClose();
   };
-
-  // Delete confirmation dialog
   if (isOpen && deleteConfirmId) {
     const presetToDelete = presets.find(p => p.id === deleteConfirmId);
     return (
@@ -709,7 +676,6 @@ const PresetManager: React.FC<PresetManagerProps> = ({
       </Dialog>
     );
   }
-
   if (isOpen && showSaveDialog) {
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleDialogClose()}>
@@ -772,7 +738,6 @@ const PresetManager: React.FC<PresetManagerProps> = ({
       </Dialog>
     );
   }
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleDialogClose()}>
       <DialogContent className="w-[90vw] max-w-[600px]">
@@ -795,9 +760,8 @@ const PresetManager: React.FC<PresetManagerProps> = ({
           </div>
           <h2 className="preset-dialog-title">Presets</h2>
         </div>
-        
         <div className="effect-dialog-content">
-          {/* Saved Presets */}
+          {}
           {presets.length > 0 ? (
             <div className="effect-category">
               <div className="effect-category-header">
@@ -851,5 +815,4 @@ const PresetManager: React.FC<PresetManagerProps> = ({
     </Dialog>
   );
 };
-
 export default PresetManager;

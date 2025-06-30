@@ -1,6 +1,4 @@
 import { Settings } from './shared/types';
-
-
 let currentSettings: Settings = {
   enabled: true,
   audioGraph: {
@@ -13,15 +11,12 @@ let currentSettings: Settings = {
     ]
   }
 };
-
 function injectScript() {
   const script = document.createElement('script');
   script.src = chrome.runtime.getURL('inject.js');
   (document.head || document.documentElement).appendChild(script);
 }
-
 function updatePageSettings() {
-  // Also send the worklet URLs since inject.js can't access chrome.runtime
   const workletUrl = chrome.runtime.getURL('src/worklets/spectral-gate-processor.js');
   const compressorWorkletUrl = chrome.runtime.getURL('src/worklets/spectral-compressor-processor.js');
   const pitchWorkletUrl = chrome.runtime.getURL('src/worklets/spectral-pitch-processor.js');
@@ -33,23 +28,19 @@ function updatePageSettings() {
     pitchWorkletUrl: pitchWorkletUrl
   }, '*');
 }
-
 chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (response) => {
   if (response) {
     currentSettings = response;
     updatePageSettings();
   }
 });
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'SETTINGS_UPDATED') {
     currentSettings = request.settings;
     updatePageSettings();
   }
 });
-
 injectScript();
-
 window.addEventListener('load', () => {
   updatePageSettings();
 });

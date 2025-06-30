@@ -1,10 +1,8 @@
 import React from 'react';
-
 interface LogoButtonProps {
   onClick: () => void;
   isActive: boolean;
 }
-
 const LogoButton: React.FC<LogoButtonProps> = ({ onClick, isActive }) => {
   return (
     <button
@@ -28,5 +26,4 @@ const LogoButton: React.FC<LogoButtonProps> = ({ onClick, isActive }) => {
     </button>
   );
 };
-
 export default LogoButton;

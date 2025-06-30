@@ -11,18 +11,15 @@ import {
 } from '../../../components/ui/select';
 import { cn } from '../../../lib/utils';
 import { AUDIO_PARAM_DEFAULTS } from '../../../constants/audioDefaults';
-
 interface UnifiedAudioNodeData {
   type: AudioNode['type'];
   deletable: boolean;
   onChange?: (key: string, value: number) => void;
   onRemove?: () => void;
-  [key: string]: any; // Allow indexing for dynamic properties
+  [key: string]: any; 
 }
-
 interface UnifiedAudioNodeProps extends NodeProps<UnifiedAudioNodeData> {
 }
-
 const nodeIcons = {
   input: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -121,7 +118,6 @@ const nodeIcons = {
     </svg>
   )
 };
-
 const nodeHeaders = {
   input: 'Audio Input',
   reverb: 'Reverb',
@@ -139,7 +135,6 @@ const nodeHeaders = {
   bitcrusher: 'Bit Crusher',
   output: 'Audio Output'
 };
-
 const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
   switch (type) {
     case 'input':
@@ -176,7 +171,6 @@ const getParamDOM = (type: AudioNode['type']): ParamConfig[] => {
       return [];
   }
 };
-
 const formatValue = (value: number, valueType: ValueType, paramKey?: string) => {
   if (valueType === 'percentage') {
     return `${value}%`;
@@ -202,7 +196,6 @@ const formatValue = (value: number, valueType: ValueType, paramKey?: string) => 
   }
   return value.toFixed(2);
 };
-
 const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNodeProps) => {
   const { type, onChange, deletable } = data;
   const paramDOM = getParamDOM(type);
@@ -210,39 +203,31 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
   const hasRightHandle = type !== 'output';
   const [editingParam, setEditingParam] = React.useState<string | null>(null);
   const [tempValue, setTempValue] = React.useState<string>('');
-
   const handleChange = (key: string, valueType: ValueType) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const newValue = (valueType === 'percentage' || valueType === 'milliseconds')
       ? parseInt(rawValue, 10) 
       : parseFloat(rawValue);
-    
-    
     if (onChange) {
       onChange(key, newValue);
     }
   };
-
   const handleCheckboxChange = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
-    
     if (onChange) {
       onChange(key, newValue ? 1 : 0);
     }
   };
-
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (data.onRemove) {
       data.onRemove();
     }
   };
-
   const handleSliderDoubleClick = (key: string, currentValue: number) => {
     setEditingParam(key);
     setTempValue(currentValue.toString());
   };
-
   const handleInputSubmit = (key: string, param: ParamConfig) => {
     const numValue = parseFloat(tempValue);
     if (!isNaN(numValue) && 'min' in param && 'max' in param) {
@@ -254,7 +239,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
     setEditingParam(null);
     setTempValue('');
   };
-
   const handleInputKeyDown = (e: React.KeyboardEvent, key: string, param: ParamConfig) => {
     if (e.key === 'Enter') {
       handleInputSubmit(key, param);
@@ -263,29 +247,18 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
       setTempValue('');
     }
   };
-
-  // Filter visualization for equalizer
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   useEffect(() => {
     if (type !== 'equalizer' || !canvasRef.current) return;
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
     const width = canvas.width;
     const height = canvas.height;
-    
-    // Clear canvas
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
-
-    // Draw grid
     ctx.strokeStyle = '#ddd';
     ctx.lineWidth = 0.5;
-    
-    // Horizontal grid lines
     for (let i = 0; i <= 4; i++) {
       const y = (height / 4) * i;
       ctx.beginPath();
@@ -293,8 +266,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-
-    // Vertical grid lines
     for (let i = 0; i <= 4; i++) {
       const x = (width / 4) * i;
       ctx.beginPath();
@@ -302,29 +273,18 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
       ctx.lineTo(x, height);
       ctx.stroke();
     }
-
-    // Calculate filter response
     const filterType = data.filterType || 'lowpass';
     const frequency = data.frequency || 1000;
     const q = data.q || 1;
-
-    // Draw frequency response curve
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2;
     ctx.beginPath();
-
     for (let x = 0; x < width; x++) {
-      // Map x to frequency (20Hz to 20kHz logarithmic)
       const freq = 20 * Math.pow(1000, x / width);
-      
-      // Calculate normalized frequency (0 to 1, where 1 is Nyquist)
       const normalizedFreq = freq / 22050;
-      
-      // Simple visualization based on filter type
-      let y = height / 2; // Default center line
+      let y = height / 2; 
       const centerFreq = frequency / 22050;
       const bandwidth = 1 / q;
-      
       if (filterType === 'lowpass') {
         if (normalizedFreq < centerFreq) {
           y = height / 2;
@@ -354,17 +314,13 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
           y = height / 2;
         }
       }
-      
       if (x === 0) {
         ctx.moveTo(x, y);
       } else {
         ctx.lineTo(x, y);
       }
     }
-    
     ctx.stroke();
-
-    // Draw center frequency marker
     const centerX = Math.log(frequency / 20) / Math.log(1000) * width;
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
@@ -375,7 +331,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
     ctx.stroke();
     ctx.setLineDash([]);
   }, [type, data.filterType, data.frequency, data.q]);
-
   return (
     <div className={`custom-node ${selected ? 'selected' : ''}`}>
       {hasLeftHandle && (
@@ -386,7 +341,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
           className="custom-handle"
         />
       )}
-      
       <div className="node-header">
         <div className="node-icon">
           {nodeIcons[type]}
@@ -406,7 +360,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
           )}
         </div>
       </div>
-      
       {type === 'equalizer' && (
         <div className="equalizer-visualization rounded-xl mx-3 mt-2">
           <canvas 
@@ -417,11 +370,9 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
           />
         </div>
       )}
-      
       {paramDOM.length > 0 && (
         <div className="node-content">
           {(() => {
-            // For spectral gate and spectral pitch, render select parameters first
             const sortedParams = (type === 'spectralgate' || type === 'spectralpitch')
               ? [...paramDOM].sort((a, b) => {
                   if (a.valueType === 'select' && b.valueType !== 'select') return -1;
@@ -429,12 +380,9 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                   return 0;
                 })
               : paramDOM;
-            
             return sortedParams.map((param) => {
             if (param.valueType === 'boolean') {
-              // Render switch for boolean parameters
               const isChecked = data[param.key] || false;
-              
               return (
                 <div key={param.key} style={{ marginBottom: '16px' }}>
                   <label className="node-label">
@@ -454,12 +402,10 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                 </div>
               );
             } else if ((param.valueType === 'waveform' || param.valueType === 'filtertype' || param.valueType === 'select') && 'options' in param) {
-              // Render dropdown for waveform, filter type, or select options
               const defaultValue = param.valueType === 'waveform' ? 'sine' : 
                                   param.valueType === 'filtertype' ? 'lowpass' : 
                                   param.options[0];
               const value = data[param.key] !== undefined ? data[param.key] : defaultValue;
-              
               return (
                 <div key={param.key} style={{ marginBottom: '16px' }}>
                   <label className="node-label">
@@ -470,7 +416,6 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                       value={value.toString()}
                       onValueChange={(newValue) => {
                         if (onChange) {
-                          // Convert back to number if the options are numbers
                           const parsedValue = param.options.every(opt => typeof opt === 'number') 
                             ? parseFloat(newValue) 
                             : newValue;
@@ -495,11 +440,9 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                 </div>
               );
             } else {
-              // Render slider for numeric parameters
               const value = data[param.key] as number;
               const displayValue = formatValue(value, param.valueType as ValueType, param.key);
               const isEditing = editingParam === param.key;
-              
               return (
                 <div key={param.key} style={{ marginBottom: '16px' }}>
                   <label className="node-label">
@@ -537,10 +480,9 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
               );
             }
           });
-          })()
+          })()}
         </div>
       )}
-      
       {hasRightHandle && (
         <Handle
           type="source"
@@ -552,7 +494,5 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
     </div>
   );
 });
-
 UnifiedAudioNode.displayName = 'UnifiedAudioNode';
-
 export default UnifiedAudioNode;

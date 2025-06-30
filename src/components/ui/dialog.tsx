@@ -1,14 +1,11 @@
 import * as React from "react"
 import { cn } from "../../lib/utils"
 import { X } from "lucide-react"
-
 interface DialogContextValue {
   open: boolean
   setOpen: (open: boolean) => void
 }
-
 const DialogContext = React.createContext<DialogContextValue | undefined>(undefined)
-
 const useDialog = () => {
   const context = React.useContext(DialogContext)
   if (!context) {
@@ -16,7 +13,6 @@ const useDialog = () => {
   }
   return context
 }
-
 const Dialog = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
@@ -27,14 +23,12 @@ const Dialog = React.forwardRef<
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false)
   const open = controlledOpen ?? uncontrolledOpen
   const setOpen = onOpenChange ?? setUncontrolledOpen
-
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpen(false)
       }
     }
-
     if (open) {
       document.addEventListener('keydown', handleEscape)
       document.body.style.overflow = 'hidden'
@@ -44,18 +38,16 @@ const Dialog = React.forwardRef<
       }
     }
   }, [open, setOpen])
-
   if (!open) return null
-
   return (
     <DialogContext.Provider value={{ open, setOpen }}>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
+        {}
         <div 
           className="fixed inset-0 bg-black/30 backdrop-blur-md animate-in fade-in-0 duration-200"
           onClick={() => setOpen(false)}
         />
-        {/* Modal */}
+        {}
         <div
           ref={ref}
           className={cn(
@@ -71,13 +63,11 @@ const Dialog = React.forwardRef<
   )
 })
 Dialog.displayName = "Dialog"
-
 const DialogTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, onClick, children, ...props }, ref) => {
   const { setOpen } = useDialog()
-  
   return (
     <button
       ref={ref}
@@ -93,13 +83,11 @@ const DialogTrigger = React.forwardRef<
   )
 })
 DialogTrigger.displayName = "DialogTrigger"
-
 const DialogContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
   const { setOpen } = useDialog()
-
   return (
     <div
       ref={ref}
@@ -120,7 +108,6 @@ const DialogContent = React.forwardRef<
   )
 })
 DialogContent.displayName = "DialogContent"
-
 const DialogHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -135,7 +122,6 @@ const DialogHeader = React.forwardRef<
   />
 ))
 DialogHeader.displayName = "DialogHeader"
-
 const DialogTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
@@ -150,7 +136,6 @@ const DialogTitle = React.forwardRef<
   />
 ))
 DialogTitle.displayName = "DialogTitle"
-
 const DialogDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
@@ -162,7 +147,6 @@ const DialogDescription = React.forwardRef<
   />
 ))
 DialogDescription.displayName = "DialogDescription"
-
 const DialogFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -177,7 +161,6 @@ const DialogFooter = React.forwardRef<
   />
 ))
 DialogFooter.displayName = "DialogFooter"
-
 export {
   Dialog,
   DialogTrigger,

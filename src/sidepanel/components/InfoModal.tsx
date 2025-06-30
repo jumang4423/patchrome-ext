@@ -6,12 +6,10 @@ import {
   DialogTitle,
 } from "../../components/ui/dialog";
 import { Github, User } from "lucide-react";
-
 interface InfoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
 const InfoModal: React.FC<InfoModalProps> = ({ open, onOpenChange }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,11 +31,10 @@ const InfoModal: React.FC<InfoModalProps> = ({ open, onOpenChange }) => {
             </div>
           </DialogHeader>
         </div>
-
         <div className="px-6 pb-6">
           <div className="flex justify-center w-full animate-in fade-in-0 duration-200 delay-100 pb-3">
             <a
-              href="https://jumango.dev"
+              href="https://github.com/jumang4423"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative overflow-hidden rounded-2xl w-full"
@@ -49,7 +46,6 @@ const InfoModal: React.FC<InfoModalProps> = ({ open, onOpenChange }) => {
               />
             </a>
           </div>
-
           <div className="pt-2 border-t border-gray-100">
             <a
               href="https://github.com/jumang4423/patchrome-ext"
@@ -88,5 +84,4 @@ const InfoModal: React.FC<InfoModalProps> = ({ open, onOpenChange }) => {
     </Dialog>
   );
 };
-
 export default InfoModal;

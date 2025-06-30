@@ -30,26 +30,21 @@ import { AudioGraphData } from '../../shared/types';
 import { AUDIO_PARAM_DEFAULTS } from '../../constants/audioDefaults';
 import { NodeGraphPreset } from '../../types/presets';
 import { EffectNodeType, NodeType } from '../../types/nodeGraphStructure';
-
 const nodeTypes = {
   unifiedAudio: UnifiedAudioNode,
 };
-
 const edgeTypes = {
   maxStyle: MaxStyleEdge,
 };
-
 const initialEdges: Edge[] = [
   { id: 'e1-3', source: '1', target: '3', type: 'maxStyle' },
 ];
-
 interface FlowDiagramProps {
   audioGraph: AudioGraphData;
   onGraphChange: (graph: AudioGraphData) => void;
   isEnabled: boolean;
   onEnabledChange: (enabled: boolean) => void;
 }
-
 const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChange, isEnabled, onEnabledChange }) => {
   const [nodeIdCounter, setNodeIdCounter] = React.useState(4);
   const { getViewport } = useReactFlow();
@@ -60,8 +55,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
   const [isInfoModalOpen, setIsInfoModalOpen] = React.useState(false);
   const [isEffectDialogOpen, setIsEffectDialogOpen] = React.useState(false);
   const [isPresetManagerOpen, setIsPresetManagerOpen] = React.useState(false);
-  
-  // Helper function to save current state to localStorage
   const saveToLocalStorage = useCallback((nodesList: Node[], edgesList: Edge[]) => {
     const nodeData = nodesList.map(node => {
       const baseNode = {
@@ -69,7 +62,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         type: node.data.type as 'input' | 'reverb' | 'delay' | 'gain' | 'output',
         params: {} as Record<string, number>
       };
-      
       if (node.data.type === 'input') {
         baseNode.params = { speed: node.data.speed ?? AUDIO_PARAM_DEFAULTS.input.speed };
       } else if (node.data.type === 'reverb') {
@@ -153,68 +145,50 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           bits: node.data.bits !== undefined ? node.data.bits : 8
         };
       }
-      
       return baseNode;
     });
-    
     const edgeData = edgesList.map(edge => ({
       id: edge.id,
       source: edge.source,
       target: edge.target
     }));
-    
     const newGraph = {
       nodes: nodeData,
       edges: edgeData
     };
-    
-    // Save graph structure
     localStorage.setItem('patchrome-flow-graph', JSON.stringify(newGraph));
-    
-    // Save positions
     const positions: Record<string, { x: number; y: number }> = {};
     nodesList.forEach(node => {
       positions[node.id] = node.position;
     });
     localStorage.setItem('patchrome-flow-positions', JSON.stringify(positions));
-    
-    // Also update parent component
     onGraphChange(newGraph);
   }, [onGraphChange]);
-
-  // Handler for node value changes
   const handleNodeValueChange = useCallback((nodeId: string, key: string, value: number | string | boolean) => {
-    
     setNodes((currentNodes) => {
       const updatedNodes = currentNodes.map(node => 
         node.id === nodeId 
           ? { ...node, data: { ...node.data, [key]: value } }
           : node
       );
-      
-      // Save to localStorage with current state
       setEdges((currentEdges) => {
         saveToLocalStorage(updatedNodes, currentEdges);
         return currentEdges;
       });
-      
       return updatedNodes;
     });
   }, [setNodes, setEdges, saveToLocalStorage]);
-
   const handleRemoveNode = useCallback((nodeId: string) => {
     setNodes((nds) => {
       const filteredNodes = nds.filter((node) => node.id !== nodeId);
       setEdges((eds) => {
         const newEdges = eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
-        // Save immediately
         saveToLocalStorage(filteredNodes, newEdges);
         return newEdges;
       });
       return filteredNodes;
     });
   }, [setNodes, setEdges, saveToLocalStorage]);
-
   const initialNodes: Node[] = [
     {
       id: '1',
@@ -241,9 +215,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       deletable: false,
     },
   ];
-
-
-  // Convert audioGraph to ReactFlow nodes
   const convertGraphToNodes = useCallback((graph: AudioGraphData): Node[] => {
     return graph.nodes.map(node => {
       const baseNode: Node = {
@@ -253,7 +224,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         deletable: node.type !== 'input' && node.type !== 'output',
         data: {},
       };
-
       if (node.type === 'input') {
         return {
           ...baseNode,
@@ -474,43 +444,31 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       }
     });
   }, [handleRemoveNode, handleNodeValueChange]);
-
-  // Load graph state from localStorage on mount
   React.useEffect(() => {
     if (!hasLoadedFromStorage) {
       const savedGraph = localStorage.getItem('patchrome-flow-graph');
       const savedPositions = localStorage.getItem('patchrome-flow-positions');
-      
       if (savedGraph && savedPositions) {
         try {
           const parsedGraph = JSON.parse(savedGraph) as AudioGraphData;
           const parsedPositions = JSON.parse(savedPositions) as Record<string, { x: number; y: number }>;
-          
-          // Convert saved graph to nodes with saved positions
           const flowNodes = convertGraphToNodes(parsedGraph).map(node => ({
             ...node,
             position: parsedPositions[node.id] || node.position
           }));
-          
           const flowEdges = parsedGraph.edges.map(edge => ({
             ...edge,
             type: 'maxStyle'
           }));
-          
           setNodes(flowNodes);
           setEdges(flowEdges);
           setIsInitialized(true);
-          
-          // Set node counter based on existing nodes
           const maxId = Math.max(...parsedGraph.nodes.map(n => parseInt(n.id)));
           setNodeIdCounter(maxId + 1);
-          
-          // Update the parent component's audioGraph
           onGraphChange(parsedGraph);
         } catch (error) {
         }
       } else {
-        // No saved graph, initialize with default nodes
         setNodes(initialNodes);
         setEdges(initialEdges);
         setIsInitialized(true);
@@ -519,91 +477,65 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       setHasLoadedFromStorage(true);
     }
   }, [hasLoadedFromStorage, convertGraphToNodes, setNodes, setEdges, onGraphChange]);
-
-  // Initialize from audioGraph if no saved state
   React.useEffect(() => {
     if (!isInitialized && audioGraph && hasLoadedFromStorage) {
-      // Check if we loaded from localStorage
       const savedGraph = localStorage.getItem('patchrome-flow-graph');
       if (!savedGraph) {
-        // No saved state, use audioGraph from props
         const flowNodes = convertGraphToNodes(audioGraph);
         const flowEdges = audioGraph.edges.map(edge => ({
           ...edge,
           type: 'maxStyle'
         }));
-        
         setNodes(flowNodes);
         setEdges(flowEdges);
         setIsInitialized(true);
-        
-        // Set node counter based on existing nodes
         const maxId = Math.max(...audioGraph.nodes.map(n => parseInt(n.id)));
         setNodeIdCounter(maxId + 1);
       }
     }
   }, [audioGraph, isInitialized, hasLoadedFromStorage, setNodes, setEdges, convertGraphToNodes]);
-
-
-  // Custom handler to prevent deletion of audio input and output nodes
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       const filteredChanges = changes.filter((change) => {
-        // Prevent deletion of audio input (id: '1') and audio output (id: '3') nodes
         if (change.type === 'remove' && (change.id === '1' || change.id === '3')) {
           return false;
         }
         return true;
       });
-      
-      // Check if any changes are NOT position changes
       const hasNonPositionChanges = filteredChanges.some(change => 
         change.type !== 'position'
       );
-      
       setNodes((nds) => {
         const updatedNodes = applyNodeChanges(filteredChanges, nds);
-        
-        // Save positions to localStorage whenever nodes change
         const positions: Record<string, { x: number; y: number }> = {};
         updatedNodes.forEach(node => {
           positions[node.id] = node.position;
         });
         localStorage.setItem('patchrome-flow-positions', JSON.stringify(positions));
-        
-        // Save graph if there are structural changes
         if (hasNonPositionChanges) {
           saveToLocalStorage(updatedNodes, edges);
         }
-        
         return updatedNodes;
       });
     },
     [setNodes, edges, saveToLocalStorage]
   );
-
   const onConnect = useCallback(
     (params: Connection) => {
       setEdges((eds) => {
         const newEdges = addEdge({ ...params, type: 'maxStyle' }, eds);
-        // Save immediately when edges change
         saveToLocalStorage(nodes, newEdges);
         return newEdges;
       });
     },
     [setEdges, nodes, saveToLocalStorage]
   );
-  
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      // Check if any edges are being removed
       const hasRemovals = changes.some(change => change.type === 'remove');
-      
-      // Apply the changes using ReactFlow's built-in handler
       setEdges((eds) => {
         const updated = applyEdgeChanges(changes, eds);
         if (hasRemovals) {
-          // Save immediately when edges are removed
           saveToLocalStorage(nodes, updated);
         }
         return updated;
@@ -611,14 +543,11 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     },
     [setEdges, nodes, saveToLocalStorage]
   );
-
   const handleAddEffect = useCallback((effectType: string) => {
     if (effectType === 'reverb') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -635,22 +564,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'delay') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -667,22 +591,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'utility') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -699,22 +618,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'limiter') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -731,22 +645,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'distortion') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -763,22 +672,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'tonegenerator') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -797,22 +701,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'equalizer') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -831,22 +730,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'phaser') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -866,22 +760,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'flanger') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -902,22 +791,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'spectralgate') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -934,20 +818,16 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         },
         position: { x: centerX - 110, y: centerY - 75 },
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
         const updated = [...nds, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'spectralcompressor') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -963,20 +843,16 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         },
         position: { x: centerX - 110, y: centerY - 75 },
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
         const updated = [...nds, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'spectralpitch') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -995,22 +871,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     } else if (effectType === 'bitcrusher') {
       const viewport = getViewport();
-      
       const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
       const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-      
       const newNodeId = nodeIdCounter.toString();
       const newNode: Node = {
         id: newNodeId,
@@ -1029,24 +900,17 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         position: { x: centerX - 110, y: centerY - 75 },
         selected: true,
       };
-      // Add to both ReactFlow nodes and save immediately
       setNodes((nds) => {
-        // Deselect all existing nodes
         const deselectedNodes = nds.map(n => ({ ...n, selected: false }));
         const updated = [...deselectedNodes, newNode];
         saveToLocalStorage(updated, edges);
         return updated;
       });
-      
       setNodeIdCounter((prev) => prev + 1);
     }
   }, [nodeIdCounter, setNodes, getViewport, handleRemoveNode, handleNodeValueChange, edges, saveToLocalStorage]);
-
-
-  // Update onRemove handlers when handleRemoveNode changes
   React.useEffect(() => {
     if (!isInitialized) return;
-    
     setNodes((nds) => {
       return nds.map((node) => {
         if (node.data.deletable) {
@@ -1062,30 +926,20 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       });
     });
   }, [isInitialized, setNodes, handleRemoveNode]);
-
-  // Handle right-click on the canvas
   const handleContextMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
     setIsEffectDialogOpen(true);
   }, []);
-
-  // Handle applying a preset to the graph
   const handleApplyPreset = useCallback((preset: NodeGraphPreset) => {
-    // Clear existing graph (except input/output nodes)
     const inputNode = nodes.find(n => n.data.type === 'input');
     const outputNode = nodes.find(n => n.data.type === 'output');
-    
-    // Create new nodes from preset
     const newNodes: Node[] = preset.nodes.map(presetNode => {
-      // Skip input/output nodes from preset, use existing ones
       if (presetNode.type === 'input' && inputNode) {
         return inputNode;
       }
       if (presetNode.type === 'output' && outputNode) {
         return outputNode;
       }
-      
-      // Create new node
       return {
         id: presetNode.id,
         type: 'unifiedAudio',
@@ -1099,15 +953,10 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         }
       };
     });
-    
-    // Apply new nodes and edges
     setNodes(newNodes);
     setEdges(preset.edges);
-    
-    // Save to localStorage
     saveToLocalStorage(newNodes, preset.edges);
   }, [nodes, setNodes, setEdges, handleNodeValueChange, handleRemoveNode, saveToLocalStorage]);
-
   return (
     <div 
       style={{ 
@@ -1156,7 +1005,6 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
     </div>
   );
 };
-
 const FlowDiagram: React.FC<FlowDiagramProps> = (props) => {
   return (
     <ReactFlowProvider>
@@ -1164,5 +1012,4 @@ const FlowDiagram: React.FC<FlowDiagramProps> = (props) => {
     </ReactFlowProvider>
   );
 };
-
 export default FlowDiagram;

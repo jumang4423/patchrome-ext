@@ -4,13 +4,11 @@ import {
   DialogContent
 } from '../../components/ui/dialog';
 import { ChevronRight } from 'lucide-react';
-
 interface AddEffectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddEffect: (effectType: string) => void;
 }
-
 const AddEffectDialog: React.FC<AddEffectDialogProps> = ({ 
   open, 
   onOpenChange, 
@@ -20,7 +18,6 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
     onAddEffect(effectType);
     onOpenChange(false);
   };
-
   const generators = [
     {
       type: 'tonegenerator',
@@ -33,7 +30,6 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
       )
     }
   ];
-
   const normalEffects = [
     {
       type: 'bitcrusher',
@@ -137,7 +133,6 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
       )
     }
   ];
-
   const spectralEffects = [
     {
       type: 'spectralcompressor',
@@ -176,12 +171,11 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
       )
     }
   ];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] max-w-[600px]">
         <div className="effect-dialog-content">
-          {/* Generators Section */}
+          {}
           <div className="effect-category">
             <div className="effect-category-header">
               <h3 className="effect-category-title">Generators</h3>
@@ -205,8 +199,7 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
               ))}
             </div>
           </div>
-
-          {/* Normal Effects Section */}
+          {}
           <div className="effect-category">
             <div className="effect-category-header">
               <h3 className="effect-category-title">Effects</h3>
@@ -230,8 +223,7 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
               ))}
             </div>
           </div>
-
-          {/* Spectral Effects Section */}
+          {}
           <div className="effect-category">
             <div className="effect-category-header">
               <h3 className="effect-category-title">Spectral Effects</h3>
@@ -260,5 +252,4 @@ const AddEffectDialog: React.FC<AddEffectDialogProps> = ({
     </Dialog>
   );
 };
-
 export default AddEffectDialog;
