@@ -129,7 +129,8 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         };
       } else if (node.data.type === 'spectralgate') {
         baseNode.params = { 
-          cutoff: node.data.cutoff !== undefined ? node.data.cutoff : -20
+          cutoff: node.data.cutoff !== undefined ? node.data.cutoff : -20,
+          fftSize: node.data.fftSize !== undefined ? node.data.fftSize : 2048
         };
       } else if (node.data.type === 'spectralcompressor') {
         baseNode.params = { 
@@ -142,7 +143,8 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
       } else if (node.data.type === 'spectralpitch') {
         baseNode.params = { 
           pitch: node.data.pitch !== undefined ? node.data.pitch : 0,
-          mix: node.data.mix !== undefined ? node.data.mix : 100
+          mix: node.data.mix !== undefined ? node.data.mix : 100,
+          fftSize: node.data.fftSize !== undefined ? node.data.fftSize : 2048
         };
       } else if (node.data.type === 'bitcrusher') {
         baseNode.params = { 
@@ -406,6 +408,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           data: {
             type: 'spectralgate' as const,
             cutoff: node.params.cutoff !== undefined ? node.params.cutoff : -20,
+            fftSize: node.params.fftSize !== undefined ? node.params.fftSize : 2048,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -437,6 +440,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
             type: 'spectralpitch' as const,
             pitch: node.params.pitch !== undefined ? node.params.pitch : 0,
             mix: node.params.mix !== undefined ? node.params.mix : 100,
+            fftSize: node.params.fftSize !== undefined ? node.params.fftSize : 2048,
             deletable: true,
             onChange: (key: string, value: number) => {
               handleNodeValueChange(node.id, key, value);
@@ -921,6 +925,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
         data: { 
           type: 'spectralgate' as const,
           cutoff: -20,
+          fftSize: 2048,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);
@@ -980,6 +985,7 @@ const FlowDiagramInner: React.FC<FlowDiagramProps> = ({ audioGraph, onGraphChang
           type: 'spectralpitch' as const,
           pitch: 0,
           mix: 100,
+          fftSize: 2048,
           deletable: true,
           onChange: (key: string, value: number) => {
             handleNodeValueChange(newNodeId, key, value);

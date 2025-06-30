@@ -420,7 +420,17 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
       
       {paramDOM.length > 0 && (
         <div className="node-content">
-          {paramDOM.map((param) => {
+          {(() => {
+            // For spectral gate and spectral pitch, render select parameters first
+            const sortedParams = (type === 'spectralgate' || type === 'spectralpitch')
+              ? [...paramDOM].sort((a, b) => {
+                  if (a.valueType === 'select' && b.valueType !== 'select') return -1;
+                  if (a.valueType !== 'select' && b.valueType === 'select') return 1;
+                  return 0;
+                })
+              : paramDOM;
+            
+            return sortedParams.map((param) => {
             if (param.valueType === 'boolean') {
               // Render switch for boolean parameters
               const isChecked = data[param.key] || false;
@@ -443,9 +453,12 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                   </div>
                 </div>
               );
-            } else if ((param.valueType === 'waveform' || param.valueType === 'filtertype') && 'options' in param) {
-              // Render dropdown for waveform or filter type selection
-              const value = data[param.key] as string || (param.valueType === 'waveform' ? 'sine' : 'lowpass');
+            } else if ((param.valueType === 'waveform' || param.valueType === 'filtertype' || param.valueType === 'select') && 'options' in param) {
+              // Render dropdown for waveform, filter type, or select options
+              const defaultValue = param.valueType === 'waveform' ? 'sine' : 
+                                  param.valueType === 'filtertype' ? 'lowpass' : 
+                                  param.options[0];
+              const value = data[param.key] !== undefined ? data[param.key] : defaultValue;
               
               return (
                 <div key={param.key} style={{ marginBottom: '16px' }}>
@@ -454,10 +467,14 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                   </label>
                   <div className="node-select-container nodrag">
                     <Select
-                      value={value}
+                      value={value.toString()}
                       onValueChange={(newValue) => {
                         if (onChange) {
-                          onChange(param.key, newValue as any);
+                          // Convert back to number if the options are numbers
+                          const parsedValue = param.options.every(opt => typeof opt === 'number') 
+                            ? parseFloat(newValue) 
+                            : newValue;
+                          onChange(param.key, parsedValue as any);
                         }
                       }}
                     >
@@ -466,8 +483,10 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                       </SelectTrigger>
                       <SelectContent>
                         {param.options.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option.charAt(0).toUpperCase() + option.slice(1)}
+                          <SelectItem key={option} value={option.toString()}>
+                            {typeof option === 'string' 
+                              ? option.charAt(0).toUpperCase() + option.slice(1)
+                              : option.toString()}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -517,7 +536,8 @@ const UnifiedAudioNode = memo(({ data, isConnectable, selected }: UnifiedAudioNo
                 </div>
               );
             }
-          })}
+          });
+          })()
         </div>
       )}
       

@@ -592,6 +592,14 @@
             } else {
             }
             
+            // Set FFT size parameter
+            const fftSizeValue = node.params.fftSize !== undefined ? node.params.fftSize : 2048;
+            const fftSizeParam = spectralGateNode.parameters.get('fftSize');
+            
+            if (fftSizeParam) {
+              fftSizeParam.value = fftSizeValue;
+            }
+            
             // Connect routing
             inputGain.connect(spectralGateNode);
             spectralGateNode.connect(merger);
@@ -679,7 +687,15 @@
       } else if (node.type === 'spectralpitch') {
         // Create spectral pitch shifter effect using AudioWorklet
         const inputGain = audioContext.createGain();
+        const dryGain = audioContext.createGain();
+        const wetGain = audioContext.createGain();
         const merger = audioContext.createGain();
+        
+        // Create delay node for latency compensation
+        // FFT size can vary, default is 2048 samples
+        const fftSize = node.params.fftSize || 2048;
+        const dryDelay = audioContext.createDelay(1);
+        dryDelay.delayTime.value = fftSize / audioContext.sampleRate;
         
         // Try to create AudioWorkletNode
         let spectralPitchNode = null;
@@ -703,17 +719,35 @@
             
             const pitchParam = spectralPitchNode.parameters.get('pitch');
             const mixParam = spectralPitchNode.parameters.get('mix');
+            const fftSizeParam = spectralPitchNode.parameters.get('fftSize');
             
             if (pitchParam) {
               pitchParam.value = pitchValue;
             }
+            // Force mix to 100% in the worklet since we handle it externally
             if (mixParam) {
-              mixParam.value = mixValue;
+              mixParam.value = 100;
+            }
+            // Set FFT size
+            const fftSizeValue = node.params.fftSize !== undefined ? node.params.fftSize : 2048;
+            if (fftSizeParam) {
+              fftSizeParam.value = fftSizeValue;
             }
             
-            // Connect routing
+            // Set up wet/dry mix externally
+            const wetAmount = mixValue / 100;
+            const dryAmount = 1 - wetAmount;
+            dryGain.gain.value = dryAmount;
+            wetGain.gain.value = wetAmount;
+            
+            // Connect routing with latency compensation
+            inputGain.connect(dryDelay);
+            dryDelay.connect(dryGain);
+            dryGain.connect(merger);
+            
             inputGain.connect(spectralPitchNode);
-            spectralPitchNode.connect(merger);
+            spectralPitchNode.connect(wetGain);
+            wetGain.connect(merger);
           } catch (e) {
             console.error('Patchrome: Failed to create spectral pitch worklet:', e);
             // Fallback: connect directly
@@ -729,7 +763,10 @@
           input: inputGain,
           output: merger,
           inputGain,
+          dryGain,
+          wetGain,
           merger,
+          dryDelay,
           spectralPitchNode,
           params: node.params,
           audioContext
@@ -744,6 +781,10 @@
         // Create script processor for bitcrushing effect
         const bufferSize = 4096;
         const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 2, 2);
+        
+        // Create delay node for latency compensation (bufferSize / sampleRate seconds)
+        const dryDelay = audioContext.createDelay(1);
+        dryDelay.delayTime.value = bufferSize / audioContext.sampleRate;
         
         // Get parameters
         const sampleRate = node.params.rate !== undefined ? node.params.rate : 30000;
@@ -797,8 +838,9 @@
         dryGain.gain.value = dryAmount;
         wetGain.gain.value = wetAmount;
         
-        // Connect internal routing
-        inputGain.connect(dryGain);
+        // Connect internal routing with latency compensation
+        inputGain.connect(dryDelay);
+        dryDelay.connect(dryGain);
         inputGain.connect(scriptProcessor);
         
         nodes.set(node.id, {
@@ -810,6 +852,7 @@
           wetGain,
           scriptProcessor,
           merger,
+          dryDelay,
           params: node.params,
           audioContext
         });
@@ -1679,14 +1722,20 @@
         if (node.spectralGateNode) {
           // Update cutoff parameter
           const cutoffValue = graphNode.params.cutoff !== undefined ? graphNode.params.cutoff : -20;
+          const fftSizeValue = graphNode.params.fftSize !== undefined ? graphNode.params.fftSize : 2048;
           
           // Use setValueAtTime for immediate parameter changes
           const currentTime = audioContexts.get(element)?.currentTime || 0;
           const cutoffParam = node.spectralGateNode.parameters.get('cutoff');
+          const fftSizeParam = node.spectralGateNode.parameters.get('fftSize');
           
           if (cutoffParam) {
             cutoffParam.setValueAtTime(cutoffValue, currentTime);
           } else {
+          }
+          
+          if (fftSizeParam) {
+            fftSizeParam.setValueAtTime(fftSizeValue, currentTime);
           }
         } else {
         }
@@ -1737,20 +1786,34 @@
           // Update parameters
           const pitchValue = graphNode.params.pitch !== undefined ? graphNode.params.pitch : 0;
           const mixValue = graphNode.params.mix !== undefined ? graphNode.params.mix : 100;
+          const fftSizeValue = graphNode.params.fftSize !== undefined ? graphNode.params.fftSize : 2048;
           
           // Use setValueAtTime for immediate parameter changes
           const currentTime = audioContexts.get(element)?.currentTime || 0;
           const pitchParam = node.spectralPitchNode.parameters.get('pitch');
-          const mixParam = node.spectralPitchNode.parameters.get('mix');
+          const fftSizeParam = node.spectralPitchNode.parameters.get('fftSize');
           
           if (pitchParam) {
             pitchParam.setValueAtTime(pitchValue, currentTime);
           }
-          if (mixParam) {
-            mixParam.setValueAtTime(mixValue, currentTime);
+          if (fftSizeParam) {
+            fftSizeParam.setValueAtTime(fftSizeValue, currentTime);
           }
           
-          console.log(`Patchrome: Updated spectralpitch ${nodeId} - pitch: ${pitchValue} cents, mix: ${mixValue}%`);
+          // Update dry delay compensation based on new FFT size
+          if (node.dryDelay) {
+            node.dryDelay.delayTime.setValueAtTime(fftSizeValue / node.audioContext.sampleRate, currentTime);
+          }
+          
+          // Handle mix externally with gain nodes
+          if (node.wetGain && node.dryGain) {
+            const wetAmount = mixValue / 100;
+            const dryAmount = 1 - wetAmount;
+            node.wetGain.gain.setValueAtTime(wetAmount, currentTime);
+            node.dryGain.gain.setValueAtTime(dryAmount, currentTime);
+          }
+          
+          console.log(`Patchrome: Updated spectralpitch ${nodeId} - pitch: ${pitchValue} cents, mix: ${mixValue}%, fftSize: ${fftSizeValue}`);
         }
         
         // Always update the stored parameters

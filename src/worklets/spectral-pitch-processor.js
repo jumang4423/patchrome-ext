@@ -8,11 +8,20 @@ class SpectralPitchProcessor extends AudioWorkletProcessor {
     // Parameters
     this.pitchShift = 0; // in cents (100 cents = 1 semitone)
     this.mix = 0; // wet/dry mix percentage
+    this.targetFftSize = 2048; // Default FFT size
     
     // FFT settings
-    this.fftSize = 2048; // Larger FFT for better pitch resolution
+    this.fftSize = 2048; // Current FFT size
     this.hopSize = this.fftSize / 4; // 75% overlap
+    this.needsReinit = false;
     
+    // Initialize with default FFT size
+    this.initializeBuffers();
+    
+    console.log('Patchrome: SpectralPitchProcessor initialized');
+  }
+  
+  initializeBuffers() {
     // Window function (Hann window)
     this.window = new Float32Array(this.fftSize);
     for (let i = 0; i < this.fftSize; i++) {
@@ -37,8 +46,6 @@ class SpectralPitchProcessor extends AudioWorkletProcessor {
         hopCounter: 0
       };
     }
-    
-    console.log('Patchrome: SpectralPitchProcessor initialized');
   }
   
   // FFT implementation (Cooley-Tukey)
@@ -189,6 +196,28 @@ class SpectralPitchProcessor extends AudioWorkletProcessor {
     if (parameters.mix && parameters.mix.length > 0) {
       this.mix = parameters.mix[0];
     }
+    if (parameters.fftSize && parameters.fftSize.length > 0) {
+      const newFftSize = Math.round(parameters.fftSize[0]);
+      // Ensure FFT size is power of 2 and within valid range
+      const validSizes = [512, 1024, 2048, 4096, 8192, 16384, 32768];
+      const closestSize = validSizes.reduce((prev, curr) => 
+        Math.abs(curr - newFftSize) < Math.abs(prev - newFftSize) ? curr : prev
+      );
+      
+      if (closestSize !== this.fftSize) {
+        this.targetFftSize = closestSize;
+        this.needsReinit = true;
+      }
+    }
+    
+    // Reinitialize buffers if FFT size changed
+    if (this.needsReinit) {
+      this.fftSize = this.targetFftSize;
+      this.hopSize = this.fftSize / 4;
+      this.initializeBuffers();
+      this.needsReinit = false;
+      console.log(`Patchrome: SpectralPitchProcessor FFT size changed to ${this.fftSize}`);
+    }
     
     const numChannels = Math.min(input.length, output.length);
     const blockSize = input[0].length;
@@ -267,6 +296,12 @@ class SpectralPitchProcessor extends AudioWorkletProcessor {
       defaultValue: 100,
       minValue: 0,
       maxValue: 100,
+      automationRate: 'k-rate'
+    }, {
+      name: 'fftSize',
+      defaultValue: 2048,
+      minValue: 512,
+      maxValue: 32768,
       automationRate: 'k-rate'
     }];
   }

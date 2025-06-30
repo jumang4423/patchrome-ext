@@ -400,6 +400,7 @@ export interface SpectralGateNode extends BaseNode {
   type: 'spectralgate';
   data: {
     cutoff: number;
+    fftSize: number;
   };
   deletable: true;
 }
@@ -412,6 +413,12 @@ export const SpectralGateParamDOM: ParamConfig[] = [
     max: 24,
     step: 0.1,
     valueType: 'decibels'
+  },
+  {
+    label: 'FFT Size',
+    key: 'fftSize',
+    valueType: 'select',
+    options: [512, 1024, 2048, 4096, 8192, 16384, 32768]
   }
 ];
 
@@ -477,6 +484,7 @@ export interface SpectralPitchNode extends BaseNode {
   data: {
     pitch: number;
     mix: number;
+    fftSize: number;
   };
   deletable: true;
 }
@@ -497,6 +505,12 @@ export const SpectralPitchParamDOM: ParamConfig[] = [
     max: 100,
     step: 1,
     valueType: 'percentage'
+  },
+  {
+    label: 'FFT Size',
+    key: 'fftSize',
+    valueType: 'select',
+    options: [512, 1024, 2048, 4096, 8192, 16384, 32768]
   }
 ];
 

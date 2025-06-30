@@ -7,11 +7,18 @@ class SpectralGateProcessor extends AudioWorkletProcessor {
     
     // Parameters
     this.cutoffDb = -20; // Higher default for more aggressive gating
+    this.targetFftSize = 2048; // Default FFT size
     
     // FFT settings
-    this.fftSize = 1024; // Even larger FFT for more precise frequency gating
+    this.fftSize = 2048; // Current FFT size
     this.hopSize = this.fftSize / 4; // 75% overlap (4x overlap)
+    this.needsReinit = false;
     
+    // Initialize with default FFT size
+    this.initializeBuffers();
+  }
+  
+  initializeBuffers() {
     // Window function (Hann window)
     this.window = new Float32Array(this.fftSize);
     for (let i = 0; i < this.fftSize; i++) {
@@ -32,7 +39,6 @@ class SpectralGateProcessor extends AudioWorkletProcessor {
         hopCounter: 0
       };
     }
-    
   }
   
   // FFT implementation
@@ -152,6 +158,28 @@ class SpectralGateProcessor extends AudioWorkletProcessor {
     if (parameters.cutoff && parameters.cutoff.length > 0) {
       this.cutoffDb = parameters.cutoff[0];
     }
+    if (parameters.fftSize && parameters.fftSize.length > 0) {
+      const newFftSize = Math.round(parameters.fftSize[0]);
+      // Ensure FFT size is power of 2 and within valid range
+      const validSizes = [512, 1024, 2048, 4096, 8192, 16384, 32768];
+      const closestSize = validSizes.reduce((prev, curr) => 
+        Math.abs(curr - newFftSize) < Math.abs(prev - newFftSize) ? curr : prev
+      );
+      
+      if (closestSize !== this.fftSize) {
+        this.targetFftSize = closestSize;
+        this.needsReinit = true;
+      }
+    }
+    
+    // Reinitialize buffers if FFT size changed
+    if (this.needsReinit) {
+      this.fftSize = this.targetFftSize;
+      this.hopSize = this.fftSize / 4;
+      this.initializeBuffers();
+      this.needsReinit = false;
+      console.log(`Patchrome: SpectralGateProcessor FFT size changed to ${this.fftSize}`);
+    }
     
     const numChannels = Math.min(input.length, output.length);
     const blockSize = input[0].length;
@@ -219,6 +247,12 @@ class SpectralGateProcessor extends AudioWorkletProcessor {
       defaultValue: -20,
       minValue: -60,
       maxValue: 24,
+      automationRate: 'k-rate'
+    }, {
+      name: 'fftSize',
+      defaultValue: 2048,
+      minValue: 512,
+      maxValue: 32768,
       automationRate: 'k-rate'
     }];
   }
